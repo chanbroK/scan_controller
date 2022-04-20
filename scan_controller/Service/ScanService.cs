@@ -15,6 +15,7 @@ namespace scan_controller.Service
         private static DataSource _dataSource;
         private static string _savePath = "D://";
         private static string _fileName = "default";
+        private static string _fileExt = ".pdf";
 
         public ScanService()
         {
@@ -33,22 +34,22 @@ namespace scan_controller.Service
             // Twain Session Open 
             _session.Open();
             // Session 상태 별 handler 설정
-            _session.TransferReady += (s, e) => { Console.WriteLine("Got xfer Ready"); };
+            _session.TransferReady += (s, e) => { Console.WriteLine("DataSource[Scan Ready]"); };
             _session.DataTransferred += (s, e) =>
             {
+                Console.WriteLine("DataSource[Scan Start]");
                 // TODO pdf로 저장 naps2 참고
                 var stream = e.GetNativeImageStream();
                 var img = Image.Load(stream);
-                // TODO 파일 이름 정하기
                 // _savePath 변수를 읽는 시점은 해당 이벤트가 발생하였을때
-                img.Save(_savePath + _fileName + ".png");
+                img.Save(_savePath + _fileName + _fileExt);
                 Console.WriteLine(e.NativeData != IntPtr.Zero
                     ? "SUCCESS! Got twain data"
                     : "FAILED! No twain data");
             };
             _session.SourceDisabled += (s, e) =>
             {
-                Console.WriteLine("Source disabled");
+                Console.WriteLine("DataSource[Scan End]");
                 _session.CurrentSource.Close();
                 // _session.Close();
             };
@@ -84,17 +85,27 @@ namespace scan_controller.Service
             if (!_dataSource.IsOpen) _dataSource.Open();
             ThreadPool.QueueUserWorkItem(
                 o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
-            return _savePath + _fileName + ".png";
+            return _savePath + _fileName + _fileExt;
         }
 
-        public string getSavePath()
+        public string GetSavePath()
         {
             return _savePath;
         }
 
-        public void setSavePath(string newPath)
+        public void SetSavePath(string newPath)
         {
             _savePath = newPath;
+        }
+
+        public string GetFileExt()
+        {
+            return _fileExt;
+        }
+
+        public void SetFileExt(string fileExt)
+        {
+            _fileExt = fileExt;
         }
     }
 }

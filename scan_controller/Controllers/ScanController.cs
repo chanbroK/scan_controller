@@ -92,15 +92,31 @@ namespace scan_controller.Controllers
         [HttpGet]
         public string GetSavePath()
         {
-            return _scanService.getSavePath();
+            return _scanService.GetSavePath();
         }
 
         [Route("savePath")]
         [HttpPost]
         public string SetSavePath(Path path)
         {
-            _scanService.setSavePath(path.path);
+            _scanService.SetSavePath(path.path);
             return path.path;
+        }
+
+        [Route("capability/{id}")]
+        [HttpGet]
+        public ScannerSpec GetScannerSpec(int id)
+        {
+            // TODO 
+            return new ScannerSpec();
+        }
+
+        [Route("capability/{id}")]
+        [HttpPost]
+        public ScannerSpec SetScannerSpec(int id)
+        {
+            // TODO
+            return new ScannerSpec();
         }
     }
 }

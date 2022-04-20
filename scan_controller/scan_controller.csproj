@@ -122,8 +122,9 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\ScannerSpec.cs" />
     <Compile Include="Models\Path.cs" />
-    <Compile Include="Models\TwainTask.cs" />
+    <Compile Include="Models\ScanTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\ScanService.cs" />
   </ItemGroup>
