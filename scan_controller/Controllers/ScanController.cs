@@ -62,7 +62,7 @@ namespace scan_controller.Controllers
         {
             try
             {
-                return _scanService.Scan(fileName);
+                return _scanService.Scan(fileName, ".pdf");
             }
             catch (Exception e)
             {
@@ -107,7 +107,7 @@ namespace scan_controller.Controllers
         [HttpGet]
         public ScannerSpec GetScannerSpec(int id)
         {
-            // TODO 
+            // TODO getCapability
             return new ScannerSpec();
         }
 
@@ -115,7 +115,7 @@ namespace scan_controller.Controllers
         [HttpPost]
         public ScannerSpec SetScannerSpec(int id)
         {
-            // TODO
+            // TODO setCapability
             return new ScannerSpec();
         }
     }

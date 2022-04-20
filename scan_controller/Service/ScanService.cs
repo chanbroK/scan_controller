@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using NTwain;
 using NTwain.Data;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
 using SixLabors.ImageSharp;
 
 namespace scan_controller.Service
@@ -38,14 +41,14 @@ namespace scan_controller.Service
             _session.DataTransferred += (s, e) =>
             {
                 Console.WriteLine("DataSource[Scan Start]");
-                // TODO pdf로 저장 naps2 참고
                 var stream = e.GetNativeImageStream();
-                var img = Image.Load(stream);
-                // _savePath 변수를 읽는 시점은 해당 이벤트가 발생하였을때
-                img.Save(_savePath + _fileName + _fileExt);
+                if (_fileExt == ".pdf")
+                    SaveToPdf(stream);
+                else
+                    SaveToImage(stream);
                 Console.WriteLine(e.NativeData != IntPtr.Zero
-                    ? "SUCCESS! Got twain data"
-                    : "FAILED! No twain data");
+                    ? "DataSource[Scan SUCCESS!]"
+                    : "DataSource[Scan FAILED!]");
             };
             _session.SourceDisabled += (s, e) =>
             {
@@ -69,9 +72,10 @@ namespace scan_controller.Service
             _dataSource.Open();
         }
 
-        public string Scan(string fileName)
+        public string Scan(string fileName, string fileExt)
         {
             _fileName = fileName;
+            _fileExt = fileExt;
             return Scan();
         }
 
@@ -98,14 +102,22 @@ namespace scan_controller.Service
             _savePath = newPath;
         }
 
-        public string GetFileExt()
+        private void SaveToImage(Stream stream)
         {
-            return _fileExt;
+            var img = Image.Load(stream);
+            // _savePath 변수를 읽는 시점은 해당 이벤트가 발생하였을때
+            img.Save(_savePath + _fileName + _fileExt);
         }
 
-        public void SetFileExt(string fileExt)
+        private void SaveToPdf(Stream stream)
         {
-            _fileExt = fileExt;
+            var doc = new PdfDocument();
+            doc.Pages.Add(new PdfPage());
+            var xgr = XGraphics.FromPdfPage(doc.Pages[0]);
+            var img = XImage.FromStream(stream);
+            xgr.DrawImage(img, 0, 0);
+            doc.Save(_savePath + _fileName + _fileExt);
+            doc.Close();
         }
     }
 }

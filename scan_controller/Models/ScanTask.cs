@@ -3,6 +3,8 @@
     public class ScanTask
     {
         public string fileName { get; set; } = "";
-        // scan spec에서 선택한 옵션들을 저장
+
+        public string fileExt { get; set; } = "";
+        // TODO scan spec에서 선택한 옵션들을 저장
     }
 }

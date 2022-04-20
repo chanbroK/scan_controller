@@ -2,6 +2,6 @@
 {
     public class ScannerSpec
     {
-        // Twain Capability 필요한 부분만 추상화
+        // TODO Twain Capability 필요한 부분만 추상화
     }
 }
