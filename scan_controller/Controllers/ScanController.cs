@@ -56,6 +56,22 @@ namespace scan_controller.Controllers
             }
         }
 
+        [Route("task/{fileName}")]
+        [HttpGet]
+        public string Scan(string fileName)
+        {
+            try
+            {
+                return _scanService.Scan(fileName);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                return "FAIL";
+            }
+        }
+
         [Route("task")]
         [HttpGet]
         public string Scan()
@@ -68,7 +84,7 @@ namespace scan_controller.Controllers
             {
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
-                return null;
+                return "FAIL";
             }
         }
 
