@@ -8,6 +8,7 @@ using NTwain;
 using NTwain.Data;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
+using scan_controller.Models;
 using SixLabors.ImageSharp;
 
 namespace scan_controller.Service
@@ -56,6 +57,9 @@ namespace scan_controller.Service
                 _session.CurrentSource.Close();
                 // _session.Close();
             };
+
+            // default datasource 설정
+            _dataSource = _session.GetSources().ToList()[0];
         }
 
         public List<DataSource> GetDataSourceList()
@@ -81,11 +85,10 @@ namespace scan_controller.Service
 
         public string Scan()
         {
-            // TODO Thread 처리를 통해서 scan 중에서도 작업 가능하도록
-            // TODO 기존 Task가 존재하면, 대기 
-            if (_dataSource == null)
-                // use default datasource
-                _dataSource = _session.DefaultSource;
+            // TODO Thread 처리를 통해서 scan 중에서도 작업 가능하도록 
+            // TODO 기존 Task가 존재하면, 대기
+            // 이미지, PDF 여러개 저장 
+            // FLATED 방식에서도 
             if (!_dataSource.IsOpen) _dataSource.Open();
             ThreadPool.QueueUserWorkItem(
                 o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
@@ -111,6 +114,7 @@ namespace scan_controller.Service
 
         private void SaveToPdf(Stream stream)
         {
+            //https://www.c-sharpcorner.com/blogs/pdf-sharp-use-to-image-to-pdf-covert2
             var doc = new PdfDocument();
             doc.Pages.Add(new PdfPage());
             var xgr = XGraphics.FromPdfPage(doc.Pages[0]);
@@ -118,6 +122,26 @@ namespace scan_controller.Service
             xgr.DrawImage(img, 0, 0);
             doc.Save(_savePath + _fileName + _fileExt);
             doc.Close();
+        }
+
+        public ScannerSpec getCapability(int id)
+        {
+            _dataSource = _session.GetSources().ToList()[id];
+            
+            if (!_dataSource.IsOpen) _dataSource.Open();
+            var spec = new ScannerSpec(_dataSource);
+            _dataSource.Close();
+            return spec;
+        }
+
+        public void setCapability()
+        {
+            if (!_dataSource.IsOpen) _dataSource.Open();
+            // 양면 설정
+            var capabilities = _dataSource.Capabilities;
+            var duplexEnabled = capabilities.CapDuplexEnabled;
+            foreach (var v in duplexEnabled.GetValues()) Console.WriteLine(v);
+            _dataSource.Close();
         }
     }
 }

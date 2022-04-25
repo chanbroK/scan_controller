@@ -19,6 +19,13 @@ namespace scan_controller.Controllers
             if (_scanService == null) _scanService = new ScanService();
         }
 
+        [Route("test")]
+        [HttpGet]
+        public ScannerSpec Test()
+        {
+            return null;
+        }
+
         [Route("datasource")]
         [HttpGet]
         public List<string> GetDatasource()
@@ -75,6 +82,7 @@ namespace scan_controller.Controllers
         [Route("task")]
         [HttpGet]
         public string Scan()
+            // TODO flat 방식 연속 출력(하나의 pdf로 저장)을 위해 end point 분리 (once, continue, finish)
         {
             try
             {
@@ -103,20 +111,20 @@ namespace scan_controller.Controllers
             return path.path;
         }
 
-        [Route("capability/{id}")]
+        [Route("spec/{id}")]
         [HttpGet]
         public ScannerSpec GetScannerSpec(int id)
         {
-            // TODO getCapability
-            return new ScannerSpec();
+            var spec = _scanService.getCapability(id);
+            return spec;
         }
 
-        [Route("capability/{id}")]
+        [Route("spec/{id}")]
         [HttpPost]
         public ScannerSpec SetScannerSpec(int id)
         {
             // TODO setCapability
-            return new ScannerSpec();
+            return null;
         }
     }
 }
