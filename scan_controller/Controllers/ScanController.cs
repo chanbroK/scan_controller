@@ -26,6 +26,12 @@ namespace scan_controller.Controllers
             return null;
         }
 
+        [Route("session")]
+        [HttpDelete]
+        public void DeleteSession()
+        {
+        }
+
         [Route("datasource")]
         [HttpGet]
         public List<string> GetDatasource()
@@ -115,7 +121,7 @@ namespace scan_controller.Controllers
         [HttpGet]
         public ScannerSpec GetScannerSpec(int id)
         {
-            var spec = _scanService.getCapability(id);
+            var spec = _scanService.GetScannerSpec(id);
             return spec;
         }
 

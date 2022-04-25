@@ -62,6 +62,12 @@ namespace scan_controller.Service
             _dataSource = _session.GetSources().ToList()[0];
         }
 
+        public void DeleteSession()
+        {
+            if (_dataSource.IsOpen) _dataSource.Close();
+            if (_session.IsDsmOpen) _session.Close();
+        }
+
         public List<DataSource> GetDataSourceList()
         {
             var result = _session.GetSources().ToList();
@@ -124,10 +130,10 @@ namespace scan_controller.Service
             doc.Close();
         }
 
-        public ScannerSpec getCapability(int id)
+        public ScannerSpec GetScannerSpec(int id)
         {
             _dataSource = _session.GetSources().ToList()[id];
-            
+
             if (!_dataSource.IsOpen) _dataSource.Open();
             var spec = new ScannerSpec(_dataSource);
             _dataSource.Close();
