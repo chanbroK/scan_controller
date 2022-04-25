@@ -23,21 +23,16 @@ namespace scan_controller.Service
 
         public ScanService()
         {
-            if (_session == null) InitSession();
-        }
-
-        private void InitSession()
-        {
-            Console.WriteLine(PlatformInfo.Current.IsApp64Bit ? "Server Running on 64bit" : "Server Running on 32Bit");
+            Console.WriteLine(PlatformInfo.Current.IsApp64Bit
+                ? "Server Running on 64bit"
+                : "Server Running on 32Bit");
             // Set NTwain read twain_32.dll
             PlatformInfo.Current.PreferNewDSM = false;
             Console.WriteLine("Loaded DSM =" + PlatformInfo.Current.ExpectedDsmPath);
             // Create Twain Session
             _session = new TwainSession(TWIdentity.CreateFromAssembly(DataGroups.Image,
                 Assembly.GetExecutingAssembly()));
-            // Twain Session Open 
-            _session.Open();
-            // Session 상태 별 handler 설정
+            // Session 상태 별 handler 설정 (추후 close 되어도 유지된다.)
             _session.TransferReady += (s, e) => { Console.WriteLine("DataSource[Scan Ready]"); };
             _session.DataTransferred += (s, e) =>
             {
@@ -58,18 +53,29 @@ namespace scan_controller.Service
                 // _session.Close();
             };
 
-            // default datasource 설정
+
+            // default datasource 설정 TODO remove
+            OpenSession();
             _dataSource = _session.GetSources().ToList()[0];
+        }
+
+        private void OpenSession()
+        {
+            // Twain Session Open 
+            _session.Open();
+            Console.WriteLine("Session[Open]");
         }
 
         public void DeleteSession()
         {
             if (_dataSource.IsOpen) _dataSource.Close();
             if (_session.IsDsmOpen) _session.Close();
+            Console.WriteLine("Session[Released]");
         }
 
         public List<DataSource> GetDataSourceList()
         {
+            if (!_session.IsDsmOpen) OpenSession();
             var result = _session.GetSources().ToList();
             return result;
         }
@@ -77,6 +83,7 @@ namespace scan_controller.Service
         public void SetDataSource(int id)
         {
             // 이전의 datasource close
+            if (!_session.IsDsmOpen) OpenSession();
             if (_dataSource != null && _dataSource.IsOpen) _dataSource.Close();
             _dataSource = _session.GetSources().ToList()[id];
             _dataSource.Open();
@@ -95,6 +102,7 @@ namespace scan_controller.Service
             // TODO 기존 Task가 존재하면, 대기
             // 이미지, PDF 여러개 저장 
             // FLATED 방식에서도 
+            if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
             ThreadPool.QueueUserWorkItem(
                 o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
@@ -109,6 +117,28 @@ namespace scan_controller.Service
         public void SetSavePath(string newPath)
         {
             _savePath = newPath;
+        }
+
+        public ScannerSpec GetScannerSpec(int id)
+        {
+            if (!_session.IsDsmOpen) OpenSession();
+            _dataSource = _session.GetSources().ToList()[id];
+
+            if (!_dataSource.IsOpen) _dataSource.Open();
+            var spec = new ScannerSpec(_dataSource);
+            _dataSource.Close();
+            return spec;
+        }
+
+        public void setCapability()
+        {
+            if (!_session.IsDsmOpen) OpenSession();
+            if (!_dataSource.IsOpen) _dataSource.Open();
+            // 양면 설정
+            var capabilities = _dataSource.Capabilities;
+            var duplexEnabled = capabilities.CapDuplexEnabled;
+            foreach (var v in duplexEnabled.GetValues()) Console.WriteLine(v);
+            _dataSource.Close();
         }
 
         private void SaveToImage(Stream stream)
@@ -128,26 +158,6 @@ namespace scan_controller.Service
             xgr.DrawImage(img, 0, 0);
             doc.Save(_savePath + _fileName + _fileExt);
             doc.Close();
-        }
-
-        public ScannerSpec GetScannerSpec(int id)
-        {
-            _dataSource = _session.GetSources().ToList()[id];
-
-            if (!_dataSource.IsOpen) _dataSource.Open();
-            var spec = new ScannerSpec(_dataSource);
-            _dataSource.Close();
-            return spec;
-        }
-
-        public void setCapability()
-        {
-            if (!_dataSource.IsOpen) _dataSource.Open();
-            // 양면 설정
-            var capabilities = _dataSource.Capabilities;
-            var duplexEnabled = capabilities.CapDuplexEnabled;
-            foreach (var v in duplexEnabled.GetValues()) Console.WriteLine(v);
-            _dataSource.Close();
         }
     }
 }

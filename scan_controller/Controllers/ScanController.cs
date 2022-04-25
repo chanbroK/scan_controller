@@ -30,6 +30,7 @@ namespace scan_controller.Controllers
         [HttpDelete]
         public void DeleteSession()
         {
+            _scanService.DeleteSession();
         }
 
         [Route("datasource")]
