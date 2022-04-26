@@ -166,12 +166,15 @@ namespace scan_controller.Service
             return spec;
         }
 
-        public void SetCapability(ScanMode scanMode)
+        public void SetCapability(ScanModeDTO scanModeDto)
         {
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
 
             var caps = _dataSource.Capabilities;
+
+            // 색상 방식
+
 
             // 양면 설정
             var duplexEnabled = caps.CapDuplexEnabled;
@@ -182,7 +185,6 @@ namespace scan_controller.Service
         private void SaveToImage(Stream stream)
         {
             var img = Image.Load(stream);
-            // _savePath 변수를 읽는 시점은 해당 이벤트가 발생하였을때
             img.Save(_savePath + _fileName + _fileExt);
         }
 
