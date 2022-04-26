@@ -1,6 +1,6 @@
 ﻿namespace scan_controller.Models
 {
-    public class SavePathDTO
+    public class SavePath
     {
         public string savePath;
     }

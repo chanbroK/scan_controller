@@ -93,7 +93,7 @@ namespace scan_controller.Controllers
         {
             try
             {
-                _scanService.SetCapability(scanTask.ScanModeDto);
+                _scanService.SetCapability(scanTask.ScanMode);
                 return _scanService.Scan(scanTask.fileName, scanTask.fileExt);
             }
             catch (Exception e)
@@ -113,10 +113,10 @@ namespace scan_controller.Controllers
 
         [Route("savePath")]
         [HttpPost]
-        public string SetSavePath(SavePathDTO savePathDto)
+        public string SetSavePath(SavePath savePath)
         {
-            _scanService.SetSavePath(savePathDto.savePath);
-            return savePathDto.savePath;
+            _scanService.SetSavePath(savePath.savePath);
+            return savePath.savePath;
         }
 
         [Route("spec/{id}")]

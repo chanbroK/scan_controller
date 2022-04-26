@@ -9,6 +9,7 @@ using NTwain.Data;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using scan_controller.Models;
+using scan_controller.Util;
 using SixLabors.ImageSharp;
 
 namespace scan_controller.Service
@@ -135,13 +136,12 @@ namespace scan_controller.Service
             // 색상 방식
             foreach (var v in caps.ICapPixelType.GetValues()) spec.colorMode.Add(v.ToString());
 
-            // DPI 방식
+            // DPI 설정
             foreach (var v in caps.ICapXResolution.GetValues())
                 // X,Y 값이 다를 수 있음 주의
                 spec.dpiMode.Add(v.ToString());
 
             // 급지 방식
-            // TODO scan 검토가 필요(실제로 양면이 어떤 방식으로 진행되는지
             spec.feederMode.Add("flated");
             if (caps.CapFeederEnabled.IsSupported)
             {
@@ -166,7 +166,7 @@ namespace scan_controller.Service
             return spec;
         }
 
-        public void SetCapability(ScanModeDTO scanModeDto)
+        public void SetCapability(ScanMode scanMode)
         {
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
@@ -174,11 +174,40 @@ namespace scan_controller.Service
             var caps = _dataSource.Capabilities;
 
             // 색상 방식
+            caps.ICapPixelType.SetValue(EnumUtil<PixelType>.Parse(scanMode.colorMode));
 
+            // DPI 설정
+            caps.ICapXResolution.SetValue(EnumUtil<TWFix32>.Parse(scanMode.dpiMode));
 
-            // 양면 설정
-            var duplexEnabled = caps.CapDuplexEnabled;
-            foreach (var v in duplexEnabled.GetValues()) Console.WriteLine(v);
+            // 급지 방식
+            if (scanMode.feederMode == "flated")
+            {
+                // 스캔
+                caps.CapFeederEnabled.SetValue(BoolType.False);
+            }
+            else
+            {
+                // ADF
+                caps.CapFeederEnabled.SetValue(BoolType.True);
+                if (scanMode.feederMode.Contains("one-side"))
+                    // 단면 ADF
+                    caps.CapDuplexEnabled.SetValue(BoolType.False);
+
+                if (scanMode.feederMode.Contains("two-side"))
+                {
+                    // 양면 ADF
+                    // TODO scan 검토가 필요(실제로 양면이 어떤 방식으로 진행되는지)
+                    caps.CapDuplexEnabled.SetValue(BoolType.True);
+                    //용지 뒤집는 방식
+                    if (caps.ICapFlipRotation.IsSupported)
+                        caps.ICapFlipRotation.SetValue(EnumUtil<FlipRotation>.Parse(scanMode.flipMode));
+                }
+            }
+
+            // 용지 크기
+            // TODO 용지 크기 설정 테스트 
+            caps.ICapSupportedSizes.SetValue(EnumUtil<SupportedSize>.Parse(scanMode.paperSizeMode));
+
             _dataSource.Close();
         }
 

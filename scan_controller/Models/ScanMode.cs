@@ -1,8 +1,6 @@
-﻿using NTwain.Data;
-
-namespace scan_controller.Models
+﻿namespace scan_controller.Models
 {
-    public class ScanModeDTO
+    public class ScanMode
     {
         // 색상 방식 [ 흑백, 회색, 컬러]
         public string colorMode;
@@ -18,15 +16,5 @@ namespace scan_controller.Models
 
         // 용지 크기 [ A3, A4, ... B3, B4...]
         public string paperSizeMode;
-    }
-
-    public class ScanMode
-    {
-        public PixelType colorMode;
-
-        public ScanMode(ScanModeDTO dto)
-        {
-            // 색상 방식
-        }
     }
 }
