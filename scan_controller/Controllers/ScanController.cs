@@ -87,13 +87,14 @@ namespace scan_controller.Controllers
         }
 
         [Route("task")]
-        [HttpGet]
-        public string Scan()
+        [HttpPost]
+        public string Task(ScanTask scanTask)
             // TODO flat 방식 연속 출력(하나의 pdf로 저장)을 위해 end point 분리 (once, continue, finish)
         {
             try
             {
-                return _scanService.Scan();
+                _scanService.SetCapability(scanTask.scanMode);
+                return _scanService.Scan(scanTask.fileName, scanTask.fileExt);
             }
             catch (Exception e)
             {
@@ -124,14 +125,6 @@ namespace scan_controller.Controllers
         {
             var spec = _scanService.GetScannerSpec(id);
             return spec;
-        }
-
-        [Route("spec/{id}")]
-        [HttpPost]
-        public ScannerSpec SetScannerSpec(int id)
-        {
-            // TODO setCapability
-            return null;
         }
     }
 }

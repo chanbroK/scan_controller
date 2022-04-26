@@ -130,13 +130,15 @@ namespace scan_controller.Service
             return spec;
         }
 
-        public void setCapability()
+        public void SetCapability(ScanMode scanMode)
         {
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
+
+            var caps = _dataSource.Capabilities;
+
             // 양면 설정
-            var capabilities = _dataSource.Capabilities;
-            var duplexEnabled = capabilities.CapDuplexEnabled;
+            var duplexEnabled = caps.CapDuplexEnabled;
             foreach (var v in duplexEnabled.GetValues()) Console.WriteLine(v);
             _dataSource.Close();
         }

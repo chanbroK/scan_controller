@@ -130,6 +130,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\ScanMode.cs" />
     <Compile Include="Models\ScannerSpec.cs" />
     <Compile Include="Models\Path.cs" />
     <Compile Include="Models\ScanTask.cs" />

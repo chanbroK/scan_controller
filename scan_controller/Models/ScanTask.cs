@@ -2,6 +2,8 @@
 {
     public class ScanTask
     {
+        public ScanMode scanMode;
+
         public string fileName { get; set; } = "";
 
         public string fileExt { get; set; } = "";

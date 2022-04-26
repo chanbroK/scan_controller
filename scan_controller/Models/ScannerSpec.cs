@@ -12,18 +12,19 @@ namespace scan_controller.Models
 
         // DPI
         public List<string> dpiMode = new List<string>();
-        // TODO Twain Capability 필요한 부분만 추상화
 
         // 급지 방식 [스캔(단면),자동급지(단면), 자동급지(양면)] 
         public List<string> feederMode = new List<string>();
 
         // 용지 뒤집는 방식 [book, fanfold] 
         public List<string> flipMode = new List<string>();
+
+        // scanner name 
         public string name;
+
 
         // 용지 크기 [ A3, A4, ... B3, B4...]
         public List<string> paperSizeMode = new List<string>();
-        // 
 
         public ScannerSpec(DataSource ds)
         {
