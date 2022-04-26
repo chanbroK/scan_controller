@@ -1,7 +1,6 @@
 ﻿namespace scan_controller.Models
 {
     public class ScanMode
-        // Response로 전송될때 enum은 int 형식으로 변환된다. -> client 를 위해 string 형식으로 저장
     {
         // 색상 방식 [ 흑백, 회색, 컬러]
         public string colorMode;

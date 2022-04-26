@@ -123,9 +123,45 @@ namespace scan_controller.Service
         {
             if (!_session.IsDsmOpen) OpenSession();
             _dataSource = _session.GetSources().ToList()[id];
-
             if (!_dataSource.IsOpen) _dataSource.Open();
-            var spec = new ScannerSpec(_dataSource);
+
+
+            var spec = new ScannerSpec();
+
+            var caps = _dataSource.Capabilities;
+
+            // 스캐너 이름
+            spec.name = _dataSource.Name;
+            // 색상 방식
+            foreach (var v in caps.ICapPixelType.GetValues()) spec.colorMode.Add(v.ToString());
+
+            // DPI 방식
+            foreach (var v in caps.ICapXResolution.GetValues())
+                // X,Y 값이 다를 수 있음 주의
+                spec.dpiMode.Add(v.ToString());
+
+            // 급지 방식
+            // TODO scan 검토가 필요(실제로 양면이 어떤 방식으로 진행되는지
+            spec.feederMode.Add("flated");
+            if (caps.CapFeederEnabled.IsSupported)
+            {
+                spec.feederMode.Add("ADF(one-side)");
+                if (caps.CapDuplexEnabled.IsSupported) spec.feederMode.Add("ADF(two-side)");
+            }
+
+            // 용지 뒤집는 방식
+
+            if (caps.ICapFlipRotation.IsSupported)
+            {
+                spec.flipMode.Add(FlipRotation.Fanfold.ToString());
+                spec.flipMode.Add(FlipRotation.Book.ToString());
+            }
+
+            // 용지 크기
+            foreach (var v in caps.ICapSupportedSizes.GetValues())
+                if (!v.Equals(SupportedSize.None))
+                    spec.paperSizeMode.Add(v.ToString());
+
             _dataSource.Close();
             return spec;
         }
