@@ -122,7 +122,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Global.asax" />
-    <Content Include="Sample\scanspec.json" />
+    <Content Include="DTOSample\SavePath.json" />
+    <Content Include="DTOSample\ScannerSpec.json" />
+    <Content Include="DTOSample\ScanTask.json" />
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>

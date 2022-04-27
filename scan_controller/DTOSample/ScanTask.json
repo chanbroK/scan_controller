@@ -1,0 +1,11 @@
+﻿{
+  "fileExt": ".pdf",
+  "fileName": "scantask",
+  "scanMode": {
+    "colorMode": "BlackWhite",
+    "dpiMode": "300",
+    "feederMode": "ADF(one-side)",
+    "flipMode": "Book",
+    "paperSizeMode": "A3"
+  }
+}
