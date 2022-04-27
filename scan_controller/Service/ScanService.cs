@@ -99,10 +99,6 @@ namespace scan_controller.Service
 
         public string Scan()
         {
-            // TODO Thread 처리를 통해서 scan 중에서도 작업 가능하도록 
-            // TODO 기존 Task가 존재하면, 대기
-            // 이미지, PDF 여러개 저장 
-            // FLATED 방식에서도 
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
             ThreadPool.QueueUserWorkItem(
@@ -176,8 +172,13 @@ namespace scan_controller.Service
             // 색상 방식
             caps.ICapPixelType.SetValue(EnumUtil<PixelType>.Parse(scanMode.colorMode));
 
-            // DPI 설정
-            caps.ICapXResolution.SetValue(EnumUtil<TWFix32>.Parse(scanMode.dpiMode));
+            // DPI 설정 (NOT Enum)
+            var dpi = short.Parse(scanMode.dpiMode);
+            var t = new TWFix32();
+            t.Whole = dpi;
+            caps.ICapXResolution.SetValue(t);
+
+            // caps.ICapXResolution.SetValue(EnumUtil<TWFix32>.Parse(scanMode.dpiMode));
 
             // 급지 방식
             if (scanMode.feederMode == "flated")
@@ -196,7 +197,6 @@ namespace scan_controller.Service
                 if (scanMode.feederMode.Contains("two-side"))
                 {
                     // 양면 ADF
-                    // TODO scan 검토가 필요(실제로 양면이 어떤 방식으로 진행되는지)
                     caps.CapDuplexEnabled.SetValue(BoolType.True);
                     //용지 뒤집는 방식
                     if (caps.ICapFlipRotation.IsSupported)
@@ -205,10 +205,9 @@ namespace scan_controller.Service
             }
 
             // 용지 크기
-            // TODO 용지 크기 설정 테스트 
             caps.ICapSupportedSizes.SetValue(EnumUtil<SupportedSize>.Parse(scanMode.paperSizeMode));
 
-            _dataSource.Close();
+            // _dataSource.Close();
         }
 
         private void SaveToImage(Stream stream)

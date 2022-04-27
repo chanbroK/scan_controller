@@ -4,6 +4,6 @@
     {
         public string fileExt;
         public string fileName;
-        public ScanMode ScanMode;
+        public ScanMode scanMode;
     }
 }

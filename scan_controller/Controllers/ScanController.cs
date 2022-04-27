@@ -9,6 +9,7 @@ using scan_controller.Service;
 namespace scan_controller.Controllers
 {
     // 해당 컨트롤러가 호출될때 객체가 생성된다.
+    // end point 는 대소문자 구분 X
     [RoutePrefix("api/scan")]
     public class ScanController : ApiController
     {
@@ -70,30 +71,13 @@ namespace scan_controller.Controllers
             }
         }
 
-        [Route("task/{fileName}")]
-        [HttpGet]
-        public string Scan(string fileName)
-        {
-            try
-            {
-                return _scanService.Scan(fileName, ".pdf");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return "FAIL";
-            }
-        }
-
         [Route("task")]
         [HttpPost]
         public string Task(ScanTask scanTask)
-            // TODO flat 방식 연속 출력(하나의 pdf로 저장)을 위해 end point 분리 (once, continue, finish)
         {
             try
             {
-                _scanService.SetCapability(scanTask.ScanMode);
+                _scanService.SetCapability(scanTask.scanMode);
                 return _scanService.Scan(scanTask.fileName, scanTask.fileExt);
             }
             catch (Exception e)
@@ -104,14 +88,14 @@ namespace scan_controller.Controllers
             }
         }
 
-        [Route("savePath")]
+        [Route("savepath")]
         [HttpGet]
         public string GetSavePath()
         {
             return _scanService.GetSavePath();
         }
 
-        [Route("savePath")]
+        [Route("savepath")]
         [HttpPost]
         public string SetSavePath(SavePath savePath)
         {
