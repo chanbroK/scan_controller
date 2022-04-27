@@ -18,9 +18,11 @@ namespace scan_controller.Service
     {
         private static TwainSession _session;
         private static DataSource _dataSource;
-        private static string _savePath = "D://";
+        private static string _savePath = "D://scan_controller_test/";
         private static string _fileName = "default";
         private static string _fileExt = ".pdf";
+        private readonly List<Stream> streamList = new List<Stream>();
+
 
         public ScanService()
         {
@@ -33,30 +35,54 @@ namespace scan_controller.Service
             // Create Twain Session
             _session = new TwainSession(TWIdentity.CreateFromAssembly(DataGroups.Image,
                 Assembly.GetExecutingAssembly()));
-            // Session 상태 별 handler 설정 (추후 close 되어도 유지된다.)
-            _session.TransferReady += (s, e) => { Console.WriteLine("DataSource[Scan Ready]"); };
+
+            // Session 상태 별 handler 설정
+            // DSM이 load되어 Session이 생성될때 handler가 등록됨(추후 close 되어도 유지된다.)
+            _session.TransferReady += (s, e) => { Console.WriteLine("스캔 시작"); };
             _session.DataTransferred += (s, e) =>
             {
-                Console.WriteLine("DataSource[Scan Start]");
+                Console.WriteLine("스캔 결과 전송 시작");
                 var stream = e.GetNativeImageStream();
-                if (_fileExt == ".pdf")
-                    SaveToPdf(stream);
-                else
-                    SaveToImage(stream);
+                streamList.Add(stream);
+                //
+                // if (_fileExt == ".pdf")
+                //     SaveToPdf(stream);
+                // else
+                //     SaveToImage(stream);
                 Console.WriteLine(e.NativeData != IntPtr.Zero
-                    ? "DataSource[Scan SUCCESS!]"
-                    : "DataSource[Scan FAILED!]");
+                    ? "스캔 성공"
+                    : "스캔 실패");
+            };
+            _session.TransferError += (s, e) =>
+            {
+                // 스캔 결과 전송 에러 발생
             };
             _session.SourceDisabled += (s, e) =>
             {
-                Console.WriteLine("DataSource[Scan End]");
-                _session.CurrentSource.Close();
-                // _session.Close();
+                // sate5 -> state4
+                Console.WriteLine("스캔 결과 전송 완료");
+                SaveToFile();
+                _dataSource.Close();
+            };
+            _session.SourceChanged += (s, e) =>
+            {
+                // 사용하는 DS가 변경 
+            };
+            _session.DeviceEvent += (s, e) =>
+            {
+                // DS의 자체 이벤트 발생
+            };
+            _session.PropertyChanged += (s, e) =>
+            {
+                // ? ? ? DS의 소유권 이전 ? 
+            };
+            _session.StateChanged += (s, e) =>
+            {
+                // state가 변경될 때 _session.state로 접근
             };
 
-
-            // default datasource 설정 TODO remove
             OpenSession();
+            // default datasource 설정 TODO remove
             _dataSource = _session.GetSources().ToList()[0];
         }
 
@@ -210,22 +236,56 @@ namespace scan_controller.Service
             // _dataSource.Close();
         }
 
-        private void SaveToImage(Stream stream)
+
+        private List<string> SaveToFile()
         {
-            var img = Image.Load(stream);
-            img.Save(_savePath + _fileName + _fileExt);
+            var fileNameList = new List<string>();
+            Console.WriteLine(streamList.Count);
+            if (_fileExt == ".pdf")
+            {
+                var doc = new PdfDocument();
+                for (var i = 0; i < streamList.Count; i++)
+                {
+                    doc.Pages.Add(new PdfPage());
+                    var xgr = XGraphics.FromPdfPage(doc.Pages[i]);
+                    var img = XImage.FromStream(streamList[i]);
+                    xgr.DrawImage(img, 0, 0);
+                }
+
+                doc.Save(_savePath + _fileName + _fileExt);
+                fileNameList.Add(_savePath + _fileName + _fileExt);
+                doc.Close();
+            }
+            else
+            {
+                for (var i = 0; i < streamList.Count; i++)
+                {
+                    var fileName = _savePath + _fileName + "_" + i + _fileExt;
+                    Image.Load(streamList[i]).Save(fileName);
+                    fileNameList.Add(fileName);
+                }
+            }
+            streamList.Clear();
+            return fileNameList;
         }
 
-        private void SaveToPdf(Stream stream)
-        {
-            //https://www.c-sharpcorner.com/blogs/pdf-sharp-use-to-image-to-pdf-covert2
-            var doc = new PdfDocument();
-            doc.Pages.Add(new PdfPage());
-            var xgr = XGraphics.FromPdfPage(doc.Pages[0]);
-            var img = XImage.FromStream(stream);
-            xgr.DrawImage(img, 0, 0);
-            doc.Save(_savePath + _fileName + _fileExt);
-            doc.Close();
-        }
+
+        // private void SaveToImage()
+        // {
+        //     var img = Image.Load(stream);
+        //     img.Save(_savePath + _fileName + _fileExt);
+        // }
+        //
+        // private void SaveToPdf()
+        // {
+        //     //https://www.c-sharpcorner.com/blogs/pdf-sharp-use-to-image-to-pdf-covert2
+        //     var doc = new PdfDocument();
+        //     doc.Pages.Add(new PdfPage());
+        //     var xgr = XGraphics.FromPdfPage(doc.Pages[0]);
+        //     var img = XImage.FromStream(stream);
+        //     xgr.DrawImage(img, 0, 0);
+        //     doc.Save(_savePath + _fileName + _fileExt);
+        //     doc.Close();
+        // }
     }
 }
