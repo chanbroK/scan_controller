@@ -16,5 +16,8 @@
 
         // 용지 크기 [ A3, A4, ... B3, B4...]
         public string paperSizeMode;
+
+        // Legacy UI
+        public bool showLegacyUI;
     }
 }

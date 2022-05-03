@@ -30,7 +30,7 @@ namespace scan_controller.Service
                 ? "Server Running on 64bit"
                 : "Server Running on 32Bit");
             // Set NTwain read twain_32.dll
-            PlatformInfo.Current.PreferNewDSM = false;
+            PlatformInfo.Current.PreferNewDSM = true;
             Console.WriteLine("Loaded DSM =" + PlatformInfo.Current.ExpectedDsmPath);
             // Create Twain Session
             _session = new TwainSession(TWIdentity.CreateFromAssembly(DataGroups.Image,
@@ -83,7 +83,7 @@ namespace scan_controller.Service
 
             OpenSession();
             // default datasource 설정 TODO remove
-            _dataSource = _session.GetSources().ToList()[0];
+            _dataSource = _session.GetSources().ToList()[2];
         }
 
         private void OpenSession()
@@ -127,6 +127,7 @@ namespace scan_controller.Service
         {
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
+
             ThreadPool.QueueUserWorkItem(
                 o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
             return _savePath + _fileName + _fileExt;
@@ -195,14 +196,16 @@ namespace scan_controller.Service
 
             var caps = _dataSource.Capabilities;
 
+            // UI 표시
+            caps.CapIndicators.SetValue(EnumUtil<BoolType>.Parse(scanMode.showLegacyUI.ToString()));
+
             // 색상 방식
             caps.ICapPixelType.SetValue(EnumUtil<PixelType>.Parse(scanMode.colorMode));
 
             // DPI 설정 (NOT Enum)
-            var dpi = short.Parse(scanMode.dpiMode);
-            var t = new TWFix32();
-            t.Whole = dpi;
-            caps.ICapXResolution.SetValue(t);
+            var dpi = int.Parse(scanMode.dpiMode);
+            caps.ICapXResolution.SetValue(dpi);
+            caps.ICapYResolution.SetValue(dpi);
 
             // caps.ICapXResolution.SetValue(EnumUtil<TWFix32>.Parse(scanMode.dpiMode));
 
@@ -231,9 +234,25 @@ namespace scan_controller.Service
             }
 
             // 용지 크기
-            caps.ICapSupportedSizes.SetValue(EnumUtil<SupportedSize>.Parse(scanMode.paperSizeMode));
+            // caps.ICapSupportedSizes.SetValue(EnumUtil<SupportedSize>.Parse(scanMode.paperSizeMode));
 
-            // _dataSource.Close();
+
+            var size = EnumUtil<SupportedSize>.Parse(scanMode.paperSizeMode);
+
+            var dsd = size.ConvertToFrame();
+            Console.WriteLine(dsd.Bottom);
+            Console.WriteLine(dsd.Top);
+            Console.WriteLine(dsd.Left);
+            Console.WriteLine(dsd.Right);
+
+            var imageLayout = new TWImageLayout
+            {
+                Frame = size.ConvertToFrame()
+            };
+            Console.WriteLine("1");
+            _dataSource.DGImage.ImageLayout.Set(imageLayout);
+            Console.WriteLine("1");
+            // // _dataSource.Close();
         }
 
 
@@ -265,6 +284,7 @@ namespace scan_controller.Service
                     fileNameList.Add(fileName);
                 }
             }
+
             streamList.Clear();
             return fileNameList;
         }
