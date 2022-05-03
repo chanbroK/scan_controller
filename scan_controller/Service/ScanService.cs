@@ -29,8 +29,13 @@ namespace scan_controller.Service
             Console.WriteLine(PlatformInfo.Current.IsApp64Bit
                 ? "Server Running on 64bit"
                 : "Server Running on 32Bit");
+
             // Set NTwain read twain_32.dll
+            // PlatformInfo.Current.PreferNewDSM = false;
+
+            // Set NTwain read twaindsm.dll
             PlatformInfo.Current.PreferNewDSM = true;
+
             Console.WriteLine("Loaded DSM =" + PlatformInfo.Current.ExpectedDsmPath);
             // Create Twain Session
             _session = new TwainSession(TWIdentity.CreateFromAssembly(DataGroups.Image,
