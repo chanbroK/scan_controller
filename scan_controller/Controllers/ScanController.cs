@@ -88,6 +88,40 @@ namespace scan_controller.Controllers
             }
         }
 
+        [Route("task/continue")]
+        [HttpPost]
+        public string ContinueTask(ScanTask scanTask)
+        {
+            try
+            {
+                _scanService.SetCapability(scanTask.scanMode);
+                return _scanService.Scan(scanTask.fileName, scanTask.fileExt);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                return "FAIL";
+            }
+        }
+
+        [Route("task/end")]
+        [HttpPost]
+        public string ContinueTaskEnd(ScanTask scanTask)
+        {
+            try
+            {
+                _scanService.SetCapability(scanTask.scanMode);
+                return _scanService.Scan(scanTask.fileName, scanTask.fileExt);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                return "FAIL";
+            }
+        }
+
         [Route("savepath")]
         [HttpGet]
         public string GetSavePath()

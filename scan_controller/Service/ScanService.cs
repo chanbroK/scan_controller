@@ -21,8 +21,9 @@ namespace scan_controller.Service
         private static string _savePath = "D://scan_controller_test/";
         private static string _fileName = "default";
         private static string _fileExt = ".pdf";
-        private readonly List<Stream> streamList = new List<Stream>();
-
+        private readonly List<Stream> _streamList = new List<Stream>();
+        private bool _isContinue;
+        private bool _isUsing;
 
         public ScanService()
         {
@@ -48,7 +49,7 @@ namespace scan_controller.Service
             {
                 Console.WriteLine("스캔 결과 전송 시작");
                 var stream = e.GetNativeImageStream();
-                streamList.Add(stream);
+                _streamList.Add(stream);
                 //
                 // if (_fileExt == ".pdf")
                 //     SaveToPdf(stream);
@@ -66,7 +67,7 @@ namespace scan_controller.Service
             {
                 // sate5 -> state4
                 Console.WriteLine("스캔 결과 전송 완료");
-                SaveToFile();
+                if (!_isContinue) SaveToFile();
                 _dataSource.Close();
             };
             _session.SourceChanged += (s, e) =>
@@ -123,20 +124,36 @@ namespace scan_controller.Service
 
         public string Scan(string fileName, string fileExt)
         {
+            if (_isUsing)
+                throw new Exception("이미 스캐너 사용중");
             _fileName = fileName;
             _fileExt = fileExt;
             return Scan();
         }
 
-        public string Scan()
+        public void ScanContinuous(string fileName, string fileExt)
+        {
+            if (_isUsing) throw new Exception("이미 스캐너 사용중");
+            _isContinue = true;
+        }
+
+        public List<string> EndContinuousScan()
+        {
+            _isContinue = false;
+            return SaveToFile();
+        }
+
+        private string Scan()
         {
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
+            _isUsing = true;
 
             ThreadPool.QueueUserWorkItem(
                 o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
             return _savePath + _fileName + _fileExt;
         }
+
 
         public string GetSavePath()
         {
@@ -243,36 +260,68 @@ namespace scan_controller.Service
 
 
             var size = EnumUtil<SupportedSize>.Parse(scanMode.paperSizeMode);
-
-            var dsd = size.ConvertToFrame();
-            Console.WriteLine(dsd.Bottom);
-            Console.WriteLine(dsd.Top);
-            Console.WriteLine(dsd.Left);
-            Console.WriteLine(dsd.Right);
-
-            var imageLayout = new TWImageLayout
+            // 용지 별 inch 값
+            float width = 0, height = 0;
+            switch (size)
             {
-                Frame = size.ConvertToFrame()
+                case SupportedSize.USLetter:
+                    width = 8.5f;
+                    height = 11;
+                    break;
+                case SupportedSize.USLegal:
+                    width = 8.5f;
+                    height = 14;
+                    break;
+                case SupportedSize.A3:
+                    width = 297 / 25.4f;
+                    height = 420 / 25.4f;
+                    break;
+                case SupportedSize.A4:
+                    width = 210 / 25.4f;
+                    height = 297 / 25.4f;
+                    break;
+                case SupportedSize.A5:
+                    width = 148 / 25.4f;
+                    height = 210 / 25.4f;
+                    break;
+                case SupportedSize.IsoB4:
+                    width = 250 / 25.4f;
+                    height = 353 / 25.4f;
+                    break;
+                case SupportedSize.IsoB5:
+                    width = 176 / 25.4f;
+                    height = 250 / 25.4f;
+                    break;
+            }
+
+            // set DS unit to inch
+            _dataSource.Capabilities.ICapUnits.SetValue(Unit.Inches);
+            _dataSource.DGImage.ImageLayout.Get(out var imageLayout);
+            // create new TWFrame
+            imageLayout.Frame = new TWFrame
+            {
+                Left = 0,
+                Right = width,
+                Top = 0,
+                Bottom = height
             };
-            Console.WriteLine("1");
             _dataSource.DGImage.ImageLayout.Set(imageLayout);
-            Console.WriteLine("1");
+
             // // _dataSource.Close();
         }
-
 
         private List<string> SaveToFile()
         {
             var fileNameList = new List<string>();
-            Console.WriteLine(streamList.Count);
+            Console.WriteLine(_streamList.Count);
             if (_fileExt == ".pdf")
             {
                 var doc = new PdfDocument();
-                for (var i = 0; i < streamList.Count; i++)
+                for (var i = 0; i < _streamList.Count; i++)
                 {
                     doc.Pages.Add(new PdfPage());
                     var xgr = XGraphics.FromPdfPage(doc.Pages[i]);
-                    var img = XImage.FromStream(streamList[i]);
+                    var img = XImage.FromStream(_streamList[i]);
                     xgr.DrawImage(img, 0, 0);
                 }
 
@@ -282,35 +331,17 @@ namespace scan_controller.Service
             }
             else
             {
-                for (var i = 0; i < streamList.Count; i++)
+                for (var i = 0; i < _streamList.Count; i++)
                 {
                     var fileName = _savePath + _fileName + "_" + i + _fileExt;
-                    Image.Load(streamList[i]).Save(fileName);
+                    Image.Load(_streamList[i]).Save(fileName);
                     fileNameList.Add(fileName);
                 }
             }
 
-            streamList.Clear();
+            _streamList.Clear();
+            _isUsing = false;
             return fileNameList;
         }
-
-
-        // private void SaveToImage()
-        // {
-        //     var img = Image.Load(stream);
-        //     img.Save(_savePath + _fileName + _fileExt);
-        // }
-        //
-        // private void SaveToPdf()
-        // {
-        //     //https://www.c-sharpcorner.com/blogs/pdf-sharp-use-to-image-to-pdf-covert2
-        //     var doc = new PdfDocument();
-        //     doc.Pages.Add(new PdfPage());
-        //     var xgr = XGraphics.FromPdfPage(doc.Pages[0]);
-        //     var img = XImage.FromStream(stream);
-        //     xgr.DrawImage(img, 0, 0);
-        //     doc.Save(_savePath + _fileName + _fileExt);
-        //     doc.Close();
-        // }
     }
 }
