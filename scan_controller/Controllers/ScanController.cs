@@ -20,18 +20,20 @@ namespace scan_controller.Controllers
             if (_scanService == null) _scanService = new ScanService();
         }
 
-        [Route("test")]
-        [HttpGet]
-        public ScannerSpec Test()
-        {
-            return null;
-        }
 
         [Route("session")]
         [HttpDelete]
-        public void DeleteSession()
+        public Response DeleteSession()
         {
-            _scanService.DeleteSession();
+            try
+            {
+                _scanService.DeleteSession();
+                return new Response(200, null, "Success Delete Session");
+            }
+            catch (Exception e)
+            {
+                return new Response(500, e, "Failed Delete Session");
+            }
         }
 
         [Route("datasource")]
@@ -90,35 +92,33 @@ namespace scan_controller.Controllers
 
         [Route("task/continue")]
         [HttpPost]
-        public string ContinueTask(ScanTask scanTask)
+        public void ContinueTask(ScanTask scanTask)
         {
             try
             {
                 _scanService.SetCapability(scanTask.scanMode);
-                return _scanService.Scan(scanTask.fileName, scanTask.fileExt);
+                _scanService.ScanContinuous(scanTask.fileName, scanTask.fileExt);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
-                return "FAIL";
             }
         }
 
-        [Route("task/end")]
-        [HttpPost]
-        public string ContinueTaskEnd(ScanTask scanTask)
+        [Route("task/continue")]
+        [HttpDelete]
+        public List<string> ContinueTaskEnd()
         {
             try
             {
-                _scanService.SetCapability(scanTask.scanMode);
-                return _scanService.Scan(scanTask.fileName, scanTask.fileExt);
+                return _scanService.EndContinuousScan();
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
-                return "FAIL";
+                return null;
             }
         }
 
