@@ -133,6 +133,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\AlreadyUsingException.cs" />
     <Compile Include="Models\Response.cs" />
     <Compile Include="Models\ScanMode.cs" />
     <Compile Include="Models\ScannerSpec.cs" />
@@ -141,6 +142,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\ScanService.cs" />
     <Compile Include="Util\EnumUtil.cs" />
+    <Compile Include="Util\RandomUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

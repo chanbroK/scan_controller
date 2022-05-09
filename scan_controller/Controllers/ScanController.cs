@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Http;
 using System.Web.Http;
 using scan_controller.Models;
 using scan_controller.Service;
+using scan_controller.Util;
 
 namespace scan_controller.Controllers
 {
@@ -38,55 +37,55 @@ namespace scan_controller.Controllers
 
         [Route("datasource")]
         [HttpGet]
-        public List<string> GetDatasource()
+        public Response GetDatasource()
         {
             try
             {
                 var sourceList = _scanService.GetDataSourceList();
                 var sourceNameList = new List<string>();
                 foreach (var ds in sourceList) sourceNameList.Add(ds.Name);
-                return sourceNameList;
+                return new Response(200, sourceNameList, "Success Get DataSource");
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return null;
+                return new Response(500, e, "Failed Get DataSource");
             }
         }
 
         [Route("datasource/{id:int}")]
         [HttpGet]
-        public HttpResponseMessage SetDatasource(int id)
+        public Response SetDatasource(int id)
         {
             try
             {
                 Console.WriteLine(id);
                 _scanService.SetDataSource(id);
-                return new HttpResponseMessage(HttpStatusCode.OK);
+                return new Response(200, null, "Success Set Datasource");
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return null;
+                return new Response(500, e, "Failed Set Datasource");
             }
         }
 
         [Route("task")]
         [HttpPost]
-        public string Task(ScanTask scanTask)
+        public Response Task(ScanTask scanTask)
         {
             try
             {
                 _scanService.SetCapability(scanTask.scanMode);
-                return _scanService.Scan(scanTask.fileName, scanTask.fileExt);
+                _scanService.Scan(scanTask.fileName, scanTask.fileExt);
+
+                return new Response(200, RandomUtil.GetRandomID(8), "Success Task");
+            }
+            catch (AlreadyUsingException e)
+            {
+                return new Response(409, e, "Failed Task[Scanner is Already Using]");
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return "FAIL";
+                return new Response(500, e, "Failed Task");
             }
         }
 
@@ -124,25 +123,45 @@ namespace scan_controller.Controllers
 
         [Route("savepath")]
         [HttpGet]
-        public string GetSavePath()
+        public Response GetSavePath()
         {
-            return _scanService.GetSavePath();
+            try
+            {
+                return new Response(200, _scanService.GetSavePath(), "Success Get Save Path");
+            }
+            catch (Exception e)
+            {
+                return new Response(500, e, "Failed Get Save Path");
+            }
         }
 
         [Route("savepath")]
         [HttpPost]
-        public string SetSavePath(SavePath savePath)
+        public Response SetSavePath(SavePath savePath)
         {
-            _scanService.SetSavePath(savePath.savePath);
-            return savePath.savePath;
+            try
+            {
+                _scanService.SetSavePath(savePath.savePath);
+                return new Response(200, savePath.savePath, "Success Set Save Path");
+            }
+            catch (Exception e)
+            {
+                return new Response(500, e, "Failed Set Save Path");
+            }
         }
 
         [Route("spec/{id}")]
         [HttpGet]
-        public ScannerSpec GetScannerSpec(int id)
+        public Response GetScannerSpec(int id)
         {
-            var spec = _scanService.GetScannerSpec(id);
-            return spec;
+            try
+            {
+                return new Response(200, _scanService.GetScannerSpec(id), "Success Get Scanner Spec");
+            }
+            catch (Exception e)
+            {
+                return new Response(500, e, "Failed Get Scanner Spec");
+            }
         }
     }
 }

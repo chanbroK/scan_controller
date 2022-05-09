@@ -124,8 +124,10 @@ namespace scan_controller.Service
 
         public string Scan(string fileName, string fileExt)
         {
+            // TODO return file name 
             if (_isUsing)
                 throw new Exception("이미 스캐너 사용중");
+            _isUsing = true;
             _fileName = fileName;
             _fileExt = fileExt;
             return Scan();
@@ -135,6 +137,10 @@ namespace scan_controller.Service
         {
             if (_isUsing) throw new Exception("이미 스캐너 사용중");
             _isContinue = true;
+            _isUsing = true;
+            _fileName = fileName;
+            _fileExt = fileExt;
+            Scan();
         }
 
         public List<string> EndContinuousScan()
@@ -147,7 +153,6 @@ namespace scan_controller.Service
         {
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
-            _isUsing = true;
 
             ThreadPool.QueueUserWorkItem(
                 o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
@@ -273,8 +278,8 @@ namespace scan_controller.Service
                     height = 14;
                     break;
                 case SupportedSize.A3:
-                    width = 297 / 25.4f;
-                    height = 420 / 25.4f;
+                    width = 420 / 25.4f;
+                    height = 297 / 25.4f;
                     break;
                 case SupportedSize.A4:
                     width = 210 / 25.4f;
@@ -298,6 +303,10 @@ namespace scan_controller.Service
             _dataSource.Capabilities.ICapUnits.SetValue(Unit.Inches);
             _dataSource.DGImage.ImageLayout.Get(out var imageLayout);
             // create new TWFrame
+            Console.WriteLine(imageLayout.Frame.Left);
+            Console.WriteLine(imageLayout.Frame.Right);
+            Console.WriteLine(imageLayout.Frame.Top);
+            Console.WriteLine(imageLayout.Frame.Bottom);
             imageLayout.Frame = new TWFrame
             {
                 Left = 0,
@@ -306,6 +315,11 @@ namespace scan_controller.Service
                 Bottom = height
             };
             _dataSource.DGImage.ImageLayout.Set(imageLayout);
+            _dataSource.DGImage.ImageLayout.Get(out var imageLayout2);
+            Console.WriteLine(imageLayout2.Frame.Left);
+            Console.WriteLine(imageLayout2.Frame.Right);
+            Console.WriteLine(imageLayout2.Frame.Top);
+            Console.WriteLine(imageLayout2.Frame.Bottom);
 
             // // _dataSource.Close();
         }
