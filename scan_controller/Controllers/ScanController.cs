@@ -55,7 +55,7 @@ namespace scan_controller.Controllers
             }
         }
 
-        [Route("datasource/{id:int}")]
+        [Route("datasource")]
         [HttpGet]
         public Response SetDatasource(int id)
         {
@@ -96,22 +96,24 @@ namespace scan_controller.Controllers
 
         [Route("task/continue")]
         [HttpPost]
-        public void StartContinueTask(ScanTask scanTask)
+        public Response StartContinueTask(ScanTask scanTask)
         {
             try
             {
                 var taskId = HashUtil.GetMD5Id();
                 _scanService.SetCapability(scanTask.scanMode);
                 _scanService.StartContinueTask(taskId, scanTask.fileExt);
+                return new Response(200, taskId, "Success Start Continue Task");
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
+                return new Response(500, e, "Failed Start Continue Task");
             }
         }
 
-        [Route("task/continue/{taskId}")]
+        [Route("task/continue")]
         [HttpPut]
         public Response ContinueTask(string taskId)
         {
@@ -127,7 +129,7 @@ namespace scan_controller.Controllers
             }
         }
 
-        [Route("task/continue/{taskId}")]
+        [Route("task/continue")]
         [HttpDelete]
         public Response DeleteContinueTask(string taskId)
         {
@@ -171,7 +173,7 @@ namespace scan_controller.Controllers
             }
         }
 
-        [Route("spec/{id}")]
+        [Route("spec")]
         [HttpGet]
         public Response GetScannerSpec(int id)
         {

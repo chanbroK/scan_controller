@@ -67,8 +67,11 @@ namespace scan_controller.Service
             {
                 // sate5 -> state4
                 Console.WriteLine("스캔 결과 전송 완료");
-                if (!_isContinue) SaveToFile();
-                _dataSource.Close();
+                if (!_isContinue)
+                {
+                    SaveToFile();
+                    _dataSource.Close();
+                }
             };
             _session.SourceChanged += (s, e) =>
             {
@@ -167,6 +170,9 @@ namespace scan_controller.Service
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
 
+            // Legacy UI 삭제
+            _dataSource.Capabilities.CapIndicators.SetValue(BoolType.False);
+
             ThreadPool.QueueUserWorkItem(
                 o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
         }
@@ -234,9 +240,6 @@ namespace scan_controller.Service
             if (!_dataSource.IsOpen) _dataSource.Open();
 
             var caps = _dataSource.Capabilities;
-
-            // UI 표시
-            caps.CapIndicators.SetValue(EnumUtil<BoolType>.Parse(scanMode.showLegacyUI.ToString()));
 
             // 색상 방식
             caps.ICapPixelType.SetValue(EnumUtil<PixelType>.Parse(scanMode.colorMode));
@@ -338,7 +341,10 @@ namespace scan_controller.Service
 
         private void SaveToFile()
         {
-            Console.WriteLine(_streamList.Count);
+            // Dir 생성
+            var di = new DirectoryInfo(_savePath + _dirName);
+            if (di.Exists == false) di.Create();
+            // Dir에 저장
             if (_fileExt == ".pdf")
             {
                 var doc = new PdfDocument();
