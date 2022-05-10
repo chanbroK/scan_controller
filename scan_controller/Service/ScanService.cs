@@ -148,26 +148,27 @@ namespace scan_controller.Service
 
         public void ContinueTask(string taskId)
         {
-            if (_taskId != taskId) 
+            if (_taskId != taskId)
                 throw new AlreadyUsingException(taskId);
-            
+
             Scan();
         }
 
-        public List<string> EndContinueScan()
+        public void EndContinueScan(string taskId)
         {
+            if (_taskId != taskId)
+                throw new ArgumentException(_taskId + "!=" + taskId, nameof(taskId));
             _isContinue = false;
-            return SaveToFile();
+            SaveToFile();
         }
 
-        private string Scan()
+        private void Scan()
         {
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
 
             ThreadPool.QueueUserWorkItem(
                 o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
-            return _savePath + _dirName + _fileExt;
         }
 
 
@@ -335,9 +336,8 @@ namespace scan_controller.Service
             // // _dataSource.Close();
         }
 
-        private List<string> SaveToFile()
+        private void SaveToFile()
         {
-            var fileNameList = new List<string>();
             Console.WriteLine(_streamList.Count);
             if (_fileExt == ".pdf")
             {
@@ -350,23 +350,20 @@ namespace scan_controller.Service
                     xgr.DrawImage(img, 0, 0);
                 }
 
-                doc.Save(_savePath + _dirName + _fileExt);
-                fileNameList.Add(_savePath + _dirName + _fileExt);
+                doc.Save(_savePath + _dirName + "/0" + _fileExt);
                 doc.Close();
             }
             else
             {
                 for (var i = 0; i < _streamList.Count; i++)
                 {
-                    var fileName = _savePath + _dirName + "_" + i + _fileExt;
+                    var fileName = _savePath + _dirName + "/" + i + _fileExt;
                     Image.Load(_streamList[i]).Save(fileName);
-                    fileNameList.Add(fileName);
                 }
             }
 
             _streamList.Clear();
-            _isUsing = false;
-            return fileNameList;
+            _taskId = null;
         }
     }
 }

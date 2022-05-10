@@ -44,7 +44,10 @@ namespace scan_controller.Controllers
                 var sourceList = _scanService.GetDataSourceList();
                 var sourceNameList = new List<string>();
                 foreach (var ds in sourceList) sourceNameList.Add(ds.Name);
-                return new Response(200, sourceNameList, "Success Get DataSource");
+                var response = new Response(200, sourceNameList, "Success Get DataSource");
+                foreach (var ds in sourceList) Console.WriteLine(ds.Name);
+                Console.WriteLine(response);
+                return response;
             }
             catch (Exception e)
             {
@@ -99,7 +102,7 @@ namespace scan_controller.Controllers
             {
                 var taskId = HashUtil.GetMD5Id();
                 _scanService.SetCapability(scanTask.scanMode);
-                _scanService.ContinueTask(taskId, scanTask.fileExt);
+                _scanService.StartContinueTask(taskId, scanTask.fileExt);
             }
             catch (Exception e)
             {
@@ -114,9 +117,7 @@ namespace scan_controller.Controllers
         {
             try
             {
-                // TODO
-                _scanService.SetCapability(scanTask.scanMode);
-                _scanService.ContinueTask(taskId, scanTask.fileExt);
+                _scanService.ContinueTask(taskId);
 
                 return new Response(200, taskId, "Success ContinueTask");
             }
@@ -128,17 +129,16 @@ namespace scan_controller.Controllers
 
         [Route("task/continue/{taskId}")]
         [HttpDelete]
-        public List<string> DeleteContinueTask()
+        public Response DeleteContinueTask(string taskId)
         {
             try
             {
-                return _scanService.EndContinueScan();
+                _scanService.EndContinueScan(taskId);
+                return new Response(200, taskId, "Success Delete Continue Task");
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return null;
+                return new Response(500, e, "Failed Delete Continue Task");
             }
         }
 
