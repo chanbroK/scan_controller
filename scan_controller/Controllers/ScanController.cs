@@ -74,10 +74,11 @@ namespace scan_controller.Controllers
         {
             try
             {
+                var taskId = HashUtil.GetMD5Id();
                 _scanService.SetCapability(scanTask.scanMode);
-                _scanService.Scan(scanTask.fileName, scanTask.fileExt);
+                _scanService.OnceTask(taskId, scanTask.fileExt);
 
-                return new Response(200, RandomUtil.GetRandomID(8), "Success Task");
+                return new Response(200, taskId, "Success Task");
             }
             catch (AlreadyUsingException e)
             {
@@ -89,14 +90,16 @@ namespace scan_controller.Controllers
             }
         }
 
+
         [Route("task/continue")]
         [HttpPost]
-        public void ContinueTask(ScanTask scanTask)
+        public void StartContinueTask(ScanTask scanTask)
         {
             try
             {
+                var taskId = HashUtil.GetMD5Id();
                 _scanService.SetCapability(scanTask.scanMode);
-                _scanService.ScanContinuous(scanTask.fileName, scanTask.fileExt);
+                _scanService.ContinueTask(taskId, scanTask.fileExt);
             }
             catch (Exception e)
             {
@@ -105,13 +108,31 @@ namespace scan_controller.Controllers
             }
         }
 
-        [Route("task/continue")]
-        [HttpDelete]
-        public List<string> ContinueTaskEnd()
+        [Route("task/continue/{taskId}")]
+        [HttpPut]
+        public Response ContinueTask(string taskId)
         {
             try
             {
-                return _scanService.EndContinuousScan();
+                // TODO
+                _scanService.SetCapability(scanTask.scanMode);
+                _scanService.ContinueTask(taskId, scanTask.fileExt);
+
+                return new Response(200, taskId, "Success ContinueTask");
+            }
+            catch (Exception e)
+            {
+                return new Response(500, e, "Failed ContinueTask");
+            }
+        }
+
+        [Route("task/continue/{taskId}")]
+        [HttpDelete]
+        public List<string> DeleteContinueTask()
+        {
+            try
+            {
+                return _scanService.EndContinueScan();
             }
             catch (Exception e)
             {

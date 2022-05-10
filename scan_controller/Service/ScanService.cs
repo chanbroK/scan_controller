@@ -19,11 +19,11 @@ namespace scan_controller.Service
         private static TwainSession _session;
         private static DataSource _dataSource;
         private static string _savePath = "D://scan_controller_test/";
-        private static string _fileName = "default";
+        private static string _dirName = "default";
         private static string _fileExt = ".pdf";
         private readonly List<Stream> _streamList = new List<Stream>();
         private bool _isContinue;
-        private bool _isUsing;
+        private string _taskId;
 
         public ScanService()
         {
@@ -122,28 +122,39 @@ namespace scan_controller.Service
             _dataSource.Open();
         }
 
-        public string Scan(string fileName, string fileExt)
+        public void OnceTask(string taskId, string fileExt)
         {
-            // TODO return file name 
-            if (_isUsing)
-                throw new Exception("이미 스캐너 사용중");
-            _isUsing = true;
-            _fileName = fileName;
+            if (_taskId != null)
+                throw new AlreadyUsingException(taskId);
+            _taskId = taskId;
+            _dirName = taskId;
             _fileExt = fileExt;
-            return Scan();
-        }
 
-        public void ScanContinuous(string fileName, string fileExt)
-        {
-            if (_isUsing) throw new Exception("이미 스캐너 사용중");
-            _isContinue = true;
-            _isUsing = true;
-            _fileName = fileName;
-            _fileExt = fileExt;
             Scan();
         }
 
-        public List<string> EndContinuousScan()
+        public void StartContinueTask(string taskId, string fileExt)
+        {
+            if (_taskId != null)
+                throw new AlreadyUsingException(_taskId);
+            _taskId = taskId;
+            _dirName = taskId;
+            _fileExt = fileExt;
+
+            _isContinue = true;
+
+            Scan();
+        }
+
+        public void ContinueTask(string taskId)
+        {
+            if (_taskId != taskId) 
+                throw new AlreadyUsingException(taskId);
+            
+            Scan();
+        }
+
+        public List<string> EndContinueScan()
         {
             _isContinue = false;
             return SaveToFile();
@@ -156,7 +167,7 @@ namespace scan_controller.Service
 
             ThreadPool.QueueUserWorkItem(
                 o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
-            return _savePath + _fileName + _fileExt;
+            return _savePath + _dirName + _fileExt;
         }
 
 
@@ -339,15 +350,15 @@ namespace scan_controller.Service
                     xgr.DrawImage(img, 0, 0);
                 }
 
-                doc.Save(_savePath + _fileName + _fileExt);
-                fileNameList.Add(_savePath + _fileName + _fileExt);
+                doc.Save(_savePath + _dirName + _fileExt);
+                fileNameList.Add(_savePath + _dirName + _fileExt);
                 doc.Close();
             }
             else
             {
                 for (var i = 0; i < _streamList.Count; i++)
                 {
-                    var fileName = _savePath + _fileName + "_" + i + _fileExt;
+                    var fileName = _savePath + _dirName + "_" + i + _fileExt;
                     Image.Load(_streamList[i]).Save(fileName);
                     fileNameList.Add(fileName);
                 }

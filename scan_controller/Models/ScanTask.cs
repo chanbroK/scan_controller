@@ -3,7 +3,8 @@
     public class ScanTask
     {
         public string fileExt;
-        public string fileName;
+
+        // public string fileName;
         public ScanMode scanMode;
     }
 }
