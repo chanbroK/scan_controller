@@ -14,7 +14,13 @@
         // 용지 뒤집는 방식 [book, fanfold] 
         public string flipMode;
 
+        // 용지 방향 [vertical, horizontal] 
+        public string paperDirection;
+
         // 용지 크기 [ A3, A4, ... B3, B4...]
         public string paperSizeMode;
+
+        // LegacyUI
+        public bool showLegacyUI;
     }
 }

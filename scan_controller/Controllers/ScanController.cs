@@ -114,13 +114,14 @@ namespace scan_controller.Controllers
         }
 
         [Route("task/continue")]
-        [HttpPut]
-        public Response ContinueTask(string taskId)
+        [HttpPost]
+        public Response ContinueTask([FromUri] string taskId, [FromBody] ScanTask scanTask)
         {
             try
             {
+                _scanService.SetCapability(scanTask.scanMode);
                 _scanService.ContinueTask(taskId);
-
+                // capability 적용을 안하면 초기화되서 default 값으로 실행됨
                 return new Response(200, taskId, "Success ContinueTask");
             }
             catch (Exception e)
@@ -179,7 +180,7 @@ namespace scan_controller.Controllers
         {
             try
             {
-                return new Response(200, _scanService.GetScannerSpec(id), "Success Get Scanner Spec");
+                return new Response(200, _scanService.GetScannerCapability(id), "Success Get Scanner Spec");
             }
             catch (Exception e)
             {

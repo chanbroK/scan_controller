@@ -20,6 +20,9 @@ namespace scan_controller.Models
         // scanner name 
         public string name;
 
+        // 용지 방향 [vertical, horizontal]
+        public List<string> paperDirection = new List<string>();
+
         // 용지 크기 [ A3, A4, ... B3, B4...]
         public List<string> paperSizeMode = new List<string>();
     }

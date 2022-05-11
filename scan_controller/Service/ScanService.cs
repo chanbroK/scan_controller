@@ -153,7 +153,7 @@ namespace scan_controller.Service
         {
             if (_taskId != taskId)
                 throw new AlreadyUsingException(taskId);
-
+            
             Scan();
         }
 
@@ -188,7 +188,7 @@ namespace scan_controller.Service
             _savePath = newPath;
         }
 
-        public ScannerSpec GetScannerSpec(int id)
+        public ScannerSpec GetScannerCapability(int id)
         {
             if (!_session.IsDsmOpen) OpenSession();
             _dataSource = _session.GetSources().ToList()[id];
@@ -230,6 +230,10 @@ namespace scan_controller.Service
                 if (!v.Equals(SupportedSize.None))
                     spec.paperSizeMode.Add(v.ToString());
 
+
+            // 용지 방향
+            spec.paperDirection.Add("vertical");
+            spec.paperDirection.Add("horizontal");
             _dataSource.Close();
             return spec;
         }
@@ -276,11 +280,9 @@ namespace scan_controller.Service
             }
 
             // 용지 크기
-            // caps.ICapSupportedSizes.SetValue(EnumUtil<SupportedSize>.Parse(scanMode.paperSizeMode));
-
 
             var size = EnumUtil<SupportedSize>.Parse(scanMode.paperSizeMode);
-            // 용지 별 inch 값
+            var direction = scanMode.paperDirection;
             float width = 0, height = 0;
             switch (size)
             {
@@ -297,8 +299,17 @@ namespace scan_controller.Service
                     height = 297 / 25.4f;
                     break;
                 case SupportedSize.A4:
-                    width = 210 / 25.4f;
-                    height = 297 / 25.4f;
+                    if (direction.Equals("vertical"))
+                    {
+                        width = 210 / 25.4f;
+                        height = 297 / 25.4f;
+                    }
+                    else
+                    {
+                        width = 297 / 25.4f;
+                        height = 210 / 25.4f;
+                    }
+
                     break;
                 case SupportedSize.A5:
                     width = 148 / 25.4f;
@@ -309,8 +320,17 @@ namespace scan_controller.Service
                     height = 353 / 25.4f;
                     break;
                 case SupportedSize.IsoB5:
-                    width = 176 / 25.4f;
-                    height = 250 / 25.4f;
+                    if (direction.Equals("vertical"))
+                    {
+                        width = 176 / 25.4f;
+                        height = 250 / 25.4f;
+                    }
+                    else
+                    {
+                        width = 250 / 25.4f;
+                        height = 176 / 25.4f;
+                    }
+
                     break;
             }
 
@@ -318,10 +338,6 @@ namespace scan_controller.Service
             _dataSource.Capabilities.ICapUnits.SetValue(Unit.Inches);
             _dataSource.DGImage.ImageLayout.Get(out var imageLayout);
             // create new TWFrame
-            Console.WriteLine(imageLayout.Frame.Left);
-            Console.WriteLine(imageLayout.Frame.Right);
-            Console.WriteLine(imageLayout.Frame.Top);
-            Console.WriteLine(imageLayout.Frame.Bottom);
             imageLayout.Frame = new TWFrame
             {
                 Left = 0,
@@ -330,13 +346,7 @@ namespace scan_controller.Service
                 Bottom = height
             };
             _dataSource.DGImage.ImageLayout.Set(imageLayout);
-            _dataSource.DGImage.ImageLayout.Get(out var imageLayout2);
-            Console.WriteLine(imageLayout2.Frame.Left);
-            Console.WriteLine(imageLayout2.Frame.Right);
-            Console.WriteLine(imageLayout2.Frame.Top);
-            Console.WriteLine(imageLayout2.Frame.Bottom);
-
-            // // _dataSource.Close();
+            Console.WriteLine(width + "" + height);
         }
 
         private void SaveToFile()
@@ -350,7 +360,9 @@ namespace scan_controller.Service
                 var doc = new PdfDocument();
                 for (var i = 0; i < _streamList.Count; i++)
                 {
-                    doc.Pages.Add(new PdfPage());
+                    var page = doc.AddPage();
+                    doc.Pages.Add(page);
+
                     var xgr = XGraphics.FromPdfPage(doc.Pages[i]);
                     var img = XImage.FromStream(_streamList[i]);
                     xgr.DrawImage(img, 0, 0);
