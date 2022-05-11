@@ -56,7 +56,7 @@ namespace scan_controller.Controllers
         }
 
         [Route("datasource")]
-        [HttpGet]
+        [HttpPatch]
         public Response SetDatasource(int id)
         {
             try
@@ -145,7 +145,7 @@ namespace scan_controller.Controllers
             }
         }
 
-        [Route("savepath")]
+        [Route("save_path")]
         [HttpGet]
         public Response GetSavePath()
         {
@@ -159,14 +159,14 @@ namespace scan_controller.Controllers
             }
         }
 
-        [Route("savepath")]
-        [HttpPost]
-        public Response SetSavePath(SavePath savePath)
+        [Route("save_path")]
+        [HttpPatch]
+        public Response SetSavePath(string savePath)
         {
             try
             {
-                _scanService.SetSavePath(savePath.savePath);
-                return new Response(200, savePath.savePath, "Success Set Save Path");
+                _scanService.SetSavePath(savePath);
+                return new Response(200, savePath, "Success Set Save Path");
             }
             catch (Exception e)
             {

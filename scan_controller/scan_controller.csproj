@@ -137,7 +137,6 @@
     <Compile Include="Models\Response.cs" />
     <Compile Include="Models\ScanMode.cs" />
     <Compile Include="Models\ScannerSpec.cs" />
-    <Compile Include="Models\SavePath.cs" />
     <Compile Include="Models\ScanTask.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\ScanService.cs" />
