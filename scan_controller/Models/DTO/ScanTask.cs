@@ -4,6 +4,8 @@
     {
         public string fileExt;
         public string id;
+        public bool isContinue;
+        public string savePath;
         public ScanMode scanMode;
     }
 }

@@ -18,12 +18,8 @@ namespace scan_controller.Service
     {
         private static TwainSession _session;
         private static DataSource _dataSource;
-        private static string _savePath = "D://scan_controller_test/";
-        private static string _dirName = "default";
-        private static string _fileExt = ".pdf";
         private readonly List<Stream> _streamList = new List<Stream>();
-        private bool _isContinue;
-        private string _taskId;
+        private ScanTask _curTask;
 
         public ScanService()
         {
@@ -67,7 +63,7 @@ namespace scan_controller.Service
             {
                 // sate5 -> state4
                 Console.WriteLine("스캔 결과 전송 완료");
-                if (!_isContinue)
+                if (_curTask != null && !_curTask.isContinue)
                 {
                     SaveToFile();
                     _dataSource.Close();
@@ -125,43 +121,18 @@ namespace scan_controller.Service
             _dataSource.Open();
         }
 
-        public void OnceTask(string taskId, string fileExt)
+
+        public void StartTask(ScanTask newTask)
         {
-            if (_taskId != null)
-                throw new AlreadyUsingException(taskId);
-            _taskId = taskId;
-            _dirName = taskId;
-            _fileExt = fileExt;
-
-            Scan();
-        }
-
-        public void StartContinueTask(string taskId, string fileExt)
-        {
-            if (_taskId != null)
-                throw new AlreadyUsingException(_taskId);
-            _taskId = taskId;
-            _dirName = taskId;
-            _fileExt = fileExt;
-
-            _isContinue = true;
-
-            Scan();
-        }
-
-        public void ContinueTask(string taskId)
-        {
-            if (_taskId != taskId)
-                throw new AlreadyUsingException(taskId);
-            
+            if (_curTask != null && _curTask.id != newTask.id) throw new AlreadyUsingException(newTask.id, _curTask.id);
+            _curTask = newTask;
             Scan();
         }
 
         public void EndContinueScan(string taskId)
         {
-            if (_taskId != taskId)
-                throw new ArgumentException(_taskId + "!=" + taskId, nameof(taskId));
-            _isContinue = false;
+            if (_curTask.id != taskId)
+                throw new ArgumentException(_curTask.id + "!=" + taskId, nameof(taskId));
             SaveToFile();
         }
 
@@ -170,22 +141,10 @@ namespace scan_controller.Service
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
 
-            // Legacy UI 삭제
-            _dataSource.Capabilities.CapIndicators.SetValue(BoolType.False);
+            SetCapability();
 
             ThreadPool.QueueUserWorkItem(
                 o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
-        }
-
-
-        public string GetSavePath()
-        {
-            return _savePath;
-        }
-
-        public void SetSavePath(string newPath)
-        {
-            _savePath = newPath;
         }
 
         public ScannerSpec GetScannerCapability(int id)
@@ -238,25 +197,26 @@ namespace scan_controller.Service
             return spec;
         }
 
-        public void SetCapability(ScanMode scanMode)
+        private void SetCapability()
         {
             if (!_session.IsDsmOpen) OpenSession();
             if (!_dataSource.IsOpen) _dataSource.Open();
 
             var caps = _dataSource.Capabilities;
 
+            // Legacy UI 삭제
+            caps.CapIndicators.SetValue(EnumUtil<BoolType>.Parse(_curTask.scanMode.showLegacyUI.ToString()));
+
             // 색상 방식
-            caps.ICapPixelType.SetValue(EnumUtil<PixelType>.Parse(scanMode.colorMode));
+            caps.ICapPixelType.SetValue(EnumUtil<PixelType>.Parse(_curTask.scanMode.colorMode));
 
             // DPI 설정 (NOT Enum)
-            var dpi = int.Parse(scanMode.dpiMode);
+            var dpi = int.Parse(_curTask.scanMode.dpiMode);
             caps.ICapXResolution.SetValue(dpi);
             caps.ICapYResolution.SetValue(dpi);
 
-            // caps.ICapXResolution.SetValue(EnumUtil<TWFix32>.Parse(scanMode.dpiMode));
-
             // 급지 방식
-            if (scanMode.feederMode == "flated")
+            if (_curTask.scanMode.feederMode == "flated")
             {
                 // 스캔
                 caps.CapFeederEnabled.SetValue(BoolType.False);
@@ -265,24 +225,24 @@ namespace scan_controller.Service
             {
                 // ADF
                 caps.CapFeederEnabled.SetValue(BoolType.True);
-                if (scanMode.feederMode.Contains("one-side"))
+                if (_curTask.scanMode.feederMode.Contains("one-side"))
                     // 단면 ADF
                     caps.CapDuplexEnabled.SetValue(BoolType.False);
 
-                if (scanMode.feederMode.Contains("two-side"))
+                if (_curTask.scanMode.feederMode.Contains("two-side"))
                 {
                     // 양면 ADF
                     caps.CapDuplexEnabled.SetValue(BoolType.True);
                     //용지 뒤집는 방식
                     if (caps.ICapFlipRotation.IsSupported)
-                        caps.ICapFlipRotation.SetValue(EnumUtil<FlipRotation>.Parse(scanMode.flipMode));
+                        caps.ICapFlipRotation.SetValue(EnumUtil<FlipRotation>.Parse(_curTask.scanMode.flipMode));
                 }
             }
 
             // 용지 크기
 
-            var size = EnumUtil<SupportedSize>.Parse(scanMode.paperSizeMode);
-            var direction = scanMode.paperDirection;
+            var size = EnumUtil<SupportedSize>.Parse(_curTask.scanMode.paperSizeMode);
+            var direction = _curTask.scanMode.paperDirection;
             float width = 0, height = 0;
             switch (size)
             {
@@ -346,42 +306,40 @@ namespace scan_controller.Service
                 Bottom = height
             };
             _dataSource.DGImage.ImageLayout.Set(imageLayout);
-            Console.WriteLine(width + "" + height);
         }
 
         private void SaveToFile()
         {
             // Dir 생성
-            var di = new DirectoryInfo(_savePath + _dirName);
-            if (di.Exists == false) di.Create();
+            var dir = new DirectoryInfo(_curTask.savePath + _curTask.id);
+            if (dir.Exists == false) dir.Create();
             // Dir에 저장
-            if (_fileExt == ".pdf")
+            if (_curTask.fileExt == ".pdf")
             {
                 var doc = new PdfDocument();
                 for (var i = 0; i < _streamList.Count; i++)
                 {
+                    // http://pdfsharp.net/wiki/PageSizes-sample.ashx
                     var page = doc.AddPage();
-                    doc.Pages.Add(page);
-
-                    var xgr = XGraphics.FromPdfPage(doc.Pages[i]);
+                    var xgr = XGraphics.FromPdfPage(page);
                     var img = XImage.FromStream(_streamList[i]);
                     xgr.DrawImage(img, 0, 0);
                 }
 
-                doc.Save(_savePath + _dirName + "/0" + _fileExt);
+                doc.Save(_curTask.savePath + _curTask.id + "/0" + _curTask.fileExt);
                 doc.Close();
             }
             else
             {
                 for (var i = 0; i < _streamList.Count; i++)
                 {
-                    var fileName = _savePath + _dirName + "/" + i + _fileExt;
+                    var fileName = _curTask.savePath + _curTask.id + "/" + i + _curTask.fileExt;
                     Image.Load(_streamList[i]).Save(fileName);
                 }
             }
 
             _streamList.Clear();
-            _taskId = null;
+            _curTask = null;
         }
     }
 }

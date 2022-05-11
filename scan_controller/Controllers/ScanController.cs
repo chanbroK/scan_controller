@@ -7,7 +7,6 @@ using scan_controller.Util;
 
 namespace scan_controller.Controllers
 {
-    // 해당 컨트롤러가 호출될때 객체가 생성된다.
     // end point 는 대소문자 구분 X
     [RoutePrefix("api/scan")]
     public class ScanController : ApiController
@@ -45,8 +44,6 @@ namespace scan_controller.Controllers
                 var sourceNameList = new List<string>();
                 foreach (var ds in sourceList) sourceNameList.Add(ds.Name);
                 var response = new Response(200, sourceNameList, "Success Get DataSource");
-                foreach (var ds in sourceList) Console.WriteLine(ds.Name);
-                Console.WriteLine(response);
                 return response;
             }
             catch (Exception e)
@@ -61,7 +58,6 @@ namespace scan_controller.Controllers
         {
             try
             {
-                Console.WriteLine(id);
                 _scanService.SetDataSource(id);
                 return new Response(200, null, "Success Set Datasource");
             }
@@ -77,15 +73,16 @@ namespace scan_controller.Controllers
         {
             try
             {
-                var taskId = HashUtil.GetMD5Id();
-                _scanService.SetCapability(scanTask.scanMode);
-                _scanService.OnceTask(taskId, scanTask.fileExt);
+                if (scanTask.id == null)
+                    scanTask.id = HashUtil.GetMD5Id();
+                _scanService.StartTask(scanTask);
 
-                return new Response(200, taskId, "Success Task");
+                return new Response(200, scanTask.id, "Success Task");
             }
             catch (AlreadyUsingException e)
             {
-                return new Response(409, e, "Failed Task[Scanner is Already Using]");
+                return new Response(409, e,
+                    "Failed Task[Scanner is Already Using] [new]" + e.newTaskId + "!=[old]" + e.oldTaskId);
             }
             catch (Exception e)
             {
@@ -93,44 +90,44 @@ namespace scan_controller.Controllers
             }
         }
 
+        //
+        // [Route("task/continue")]
+        // [HttpPost]
+        // public Response StartContinueTask(ScanTask scanTask)
+        // {
+        //     try
+        //     {
+        //         var taskId = HashUtil.GetMD5Id();
+        //         _scanService.SetCapability(scanTask.scanMode);
+        //         _scanService.StartContinueTask(taskId, scanTask.fileExt);
+        //         return new Response(200, taskId, "Success Start Continue Task");
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         Console.WriteLine(e.Message);
+        //         Console.WriteLine(e.StackTrace);
+        //         return new Response(500, e, "Failed Start Continue Task");
+        //     }
+        // }
 
-        [Route("task/continue")]
-        [HttpPost]
-        public Response StartContinueTask(ScanTask scanTask)
-        {
-            try
-            {
-                var taskId = HashUtil.GetMD5Id();
-                _scanService.SetCapability(scanTask.scanMode);
-                _scanService.StartContinueTask(taskId, scanTask.fileExt);
-                return new Response(200, taskId, "Success Start Continue Task");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return new Response(500, e, "Failed Start Continue Task");
-            }
-        }
+        // [Route("task/continue")]
+        // [HttpPost]
+        // public Response ContinueTask([FromUri] string taskId, [FromBody] ScanTask scanTask)
+        // {
+        //     try
+        //     {
+        //         _scanService.SetCapability(scanTask.scanMode);
+        //         _scanService.ContinueTask(taskId);
+        //         // capability 적용을 안하면 초기화되서 default 값으로 실행됨
+        //         return new Response(200, taskId, "Success ContinueTask");
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         return new Response(500, e, "Failed ContinueTask");
+        //     }
+        // }
 
-        [Route("task/continue")]
-        [HttpPost]
-        public Response ContinueTask([FromUri] string taskId, [FromBody] ScanTask scanTask)
-        {
-            try
-            {
-                _scanService.SetCapability(scanTask.scanMode);
-                _scanService.ContinueTask(taskId);
-                // capability 적용을 안하면 초기화되서 default 값으로 실행됨
-                return new Response(200, taskId, "Success ContinueTask");
-            }
-            catch (Exception e)
-            {
-                return new Response(500, e, "Failed ContinueTask");
-            }
-        }
-
-        [Route("task/continue")]
+        [Route("task")]
         [HttpDelete]
         public Response DeleteContinueTask(string taskId)
         {
@@ -145,34 +142,34 @@ namespace scan_controller.Controllers
             }
         }
 
-        [Route("save_path")]
-        [HttpGet]
-        public Response GetSavePath()
-        {
-            try
-            {
-                return new Response(200, _scanService.GetSavePath(), "Success Get Save Path");
-            }
-            catch (Exception e)
-            {
-                return new Response(500, e, "Failed Get Save Path");
-            }
-        }
-
-        [Route("save_path")]
-        [HttpPatch]
-        public Response SetSavePath(string savePath)
-        {
-            try
-            {
-                _scanService.SetSavePath(savePath);
-                return new Response(200, savePath, "Success Set Save Path");
-            }
-            catch (Exception e)
-            {
-                return new Response(500, e, "Failed Set Save Path");
-            }
-        }
+        // [Route("save_path")]
+        // [HttpGet]
+        // public Response GetSavePath()
+        // {
+        //     try
+        //     {
+        //         return new Response(200, _scanService.GetSavePath(), "Success Get Save Path");
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         return new Response(500, e, "Failed Get Save Path");
+        //     }
+        // }
+        //
+        // [Route("save_path")]
+        // [HttpPatch]
+        // public Response SetSavePath(string savePath)
+        // {
+        //     try
+        //     {
+        //         _scanService.SetSavePath(savePath);
+        //         return new Response(200, savePath, "Success Set Save Path");
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         return new Response(500, e, "Failed Set Save Path");
+        //     }
+        // }
 
         [Route("spec")]
         [HttpGet]
