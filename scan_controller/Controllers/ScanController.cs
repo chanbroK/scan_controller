@@ -184,5 +184,20 @@ namespace scan_controller.Controllers
                 return new Response(500, e, "Failed Get Scanner Spec");
             }
         }
+
+        [Route("state")]
+        [HttpGet]
+        // TODO Twain State 별 설명 
+        public Response GetState()
+        {
+            try
+            {
+                return new Response(200, _scanService.getState(), "Success Get State");
+            }
+            catch (Exception e)
+            {
+                return new Response(500, e, "failed Get State");
+            }
+        }
     }
 }

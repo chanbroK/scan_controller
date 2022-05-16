@@ -198,6 +198,11 @@ namespace scan_controller.Service
             return spec;
         }
 
+        public int getState()
+        {
+            return _session.State;
+        }
+
         private void SetCapability()
         {
             if (!_session.IsDsmOpen) OpenSession();
