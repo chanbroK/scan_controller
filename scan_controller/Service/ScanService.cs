@@ -364,7 +364,7 @@ namespace scan_controller.Service
                     xgr.DrawImage(img, 0, 0);
                 }
 
-                doc.Save(_curTask.savePath + _curTask.id + "/0" + _curTask.fileExt);
+                doc.Save(_curTask.savePath + _curTask.id + "/000000" + _curTask.fileExt);
                 doc.Close();
             }
             else

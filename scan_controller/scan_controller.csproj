@@ -121,6 +121,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="DTOSample\ContinueScanTask.json" />
     <Content Include="Global.asax" />
     <Content Include="DTOSample\SavePath.json" />
     <Content Include="DTOSample\ScannerSpec.json" />

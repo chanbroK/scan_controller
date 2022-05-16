@@ -74,7 +74,7 @@ namespace scan_controller.Controllers
             try
             {
                 if (scanTask.id == null)
-                    scanTask.id = HashUtil.GetMD5Id();
+                    scanTask.id = HashUtil.GetGuid();
                 _scanService.StartTask(scanTask);
 
                 return new Response(200, scanTask.id, "Success Task");

@@ -28,5 +28,10 @@ namespace scan_controller.Util
             foreach (var t in resultArr) md5Str.Append(t.ToString("X2"));
             return md5Str.ToString();
         }
+
+        public static string GetGuid()
+        {
+            return Guid.NewGuid().ToString().Replace("-", "");
+        }
     }
 }

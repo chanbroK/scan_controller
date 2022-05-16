@@ -1,16 +1,17 @@
 ﻿{
   "fileExt": ".pdf",
   "savePath": "D://test//",
-  "isContinue": false,
+  "isContinue": true,
+  "id": "2DD1F805DCC6A3AAB703CB10184ED765",
   "scanMode": {
-    "colorMode": "BlackWhite",
+    "colorMode": "Gray",
     "dpiMode": "300",
     // "feederMode":"ADF(one-side)",
     // "feederMode":"ADF(two-side)",
     "feederMode": "flated",
     "flipMode": "Book",
-    "paperDirection": "horizontal",
-    "paperSizeMode": "A3",
+    "paperDirection": "vertical",
+    "paperSizeMode": "A5",
     "showLegacyUI": false
   }
 }
