@@ -1,65 +1,73 @@
 ﻿{
-  "colorMode": [
-    "BlackWhite",
-    "Gray",
-    "RGB",
-    "Palette"
-  ],
-  "dpiMode": [
-    "75",
-    "100",
-    "150",
-    "200",
-    "300",
-    "600",
-    "1200",
-    "2400",
-    "4800"
-  ],
-  "feederMode": [
-    "flated",
-    "ADF(one-side)",
-    "ADF(two-side)"
-  ],
-  "flipMode": [
-    "Fanfold",
-    "Book"
-  ],
-  "name": "Samsung Universal Scan Driver",
-  "paperSizeMode": [
-    "USLetter",
-    "USLegal",
-    "USLedger",
-    "USExecutive",
-    "USStatement",
-    "BusinessCard",
-    "A3",
-    "A4",
-    "A5",
-    "A6",
-    "A7",
-    "A8",
-    "A9",
-    "A10",
-    "IsoB4",
-    "IsoB5",
-    "IsoB6",
-    "IsoB7",
-    "IsoB9",
-    "IsoB10",
-    "JisB4",
-    "JisB5",
-    "JisB6",
-    "JisB7",
-    "JisB8",
-    "JisB9",
-    "JisB10",
-    "C4",
-    "C5",
-    "C6",
-    "C7",
-    "C8",
-    "C9",
-    "C10"
-  ]
+  "body": {
+    "colorMode": [
+      "BlackWhite",
+      "Gray",
+      "RGB",
+      "Palette"
+    ],
+    "dpiMode": [
+      "75",
+      "100",
+      "150",
+      "200",
+      "300",
+      "600",
+      "1200",
+      "2400",
+      "4800"
+    ],
+    "feederMode": [
+      "flated",
+      "ADF(one-side)",
+      "ADF(two-side)"
+    ],
+    "flipMode": [
+      "Fanfold",
+      "Book"
+    ],
+    "name": "Samsung Universal Scan Driver",
+    "paperDirection": [
+      "vertical",
+      "horizontal"
+    ],
+    "paperSizeMode": [
+      "USLetter",
+      "USLegal",
+      "USLedger",
+      "USExecutive",
+      "USStatement",
+      "BusinessCard",
+      "A3",
+      "A4",
+      "A5",
+      "A6",
+      "A7",
+      "A8",
+      "A9",
+      "A10",
+      "IsoB4",
+      "IsoB5",
+      "IsoB6",
+      "IsoB7",
+      "IsoB9",
+      "IsoB10",
+      "JisB4",
+      "JisB5",
+      "JisB6",
+      "JisB7",
+      "JisB8",
+      "JisB9",
+      "JisB10",
+      "C4",
+      "C5",
+      "C6",
+      "C7",
+      "C8",
+      "C9",
+      "C10"
+    ]
+  },
+  "code": 200,
+  "message": "Success Get Scanner Spec"
 }

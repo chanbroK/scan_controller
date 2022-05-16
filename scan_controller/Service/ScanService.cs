@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading;
 using NTwain;
 using NTwain.Data;
+using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using scan_controller.Models;
@@ -317,10 +318,42 @@ namespace scan_controller.Service
             if (_curTask.fileExt == ".pdf")
             {
                 var doc = new PdfDocument();
+                // pdfSize setting 
+                var pdfSize = PageSize.A4;
+                switch (_curTask.scanMode.paperSizeMode)
+                {
+                    case "USLetter":
+                        pdfSize = PageSize.Letter;
+                        break;
+                    case "USLegal":
+                        pdfSize = PageSize.Legal;
+                        break;
+                    case "A3":
+                        pdfSize = PageSize.RA3;
+                        break;
+                    case "A4":
+                        pdfSize = PageSize.A4;
+                        break;
+                    case "A5":
+                        pdfSize = PageSize.A5;
+                        break;
+                    case "IsoB4":
+                        pdfSize = PageSize.B4;
+                        break;
+                    case "IsoB5":
+                        pdfSize = PageSize.B4;
+                        break;
+                }
+
+                // pdfDirection setting
+                var pdfDirection = PageOrientation.Portrait;
+                if (_curTask.scanMode.paperDirection == "horizontal") pdfDirection = PageOrientation.Landscape;
                 for (var i = 0; i < _streamList.Count; i++)
                 {
                     // http://pdfsharp.net/wiki/PageSizes-sample.ashx
                     var page = doc.AddPage();
+                    page.Size = pdfSize;
+                    page.Orientation = pdfDirection;
                     var xgr = XGraphics.FromPdfPage(page);
                     var img = XImage.FromStream(_streamList[i]);
                     xgr.DrawImage(img, 0, 0);
