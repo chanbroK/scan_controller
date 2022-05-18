@@ -2,15 +2,17 @@
 {
     public class Response
     {
-        public Response(int code, object body, string message)
+        public Response(int code, object result, string message)
         {
             this.code = code;
-            this.body = body;
+            this.result = result;
             this.message = message;
         }
 
-        public object body { get; set; }
+        public object result { get; set; }
+
         public int code { get; set; }
+
         public string message { get; set; }
     }
 }
