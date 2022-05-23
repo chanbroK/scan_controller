@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using NTwain;
 using NTwain.Data;
 using PdfSharp;
@@ -20,6 +19,7 @@ namespace scan_controller.Service
     {
         private static TwainSession _session;
         private static DataSource _dataSource;
+
         private readonly List<Stream> _streamList = new List<Stream>();
         private ScanTask _curTask;
 
@@ -65,11 +65,11 @@ namespace scan_controller.Service
             {
                 // sate5 -> state4
                 Console.WriteLine("스캔 결과 전송 완료");
-                if (_curTask != null && !_curTask.isContinue)
-                {
-                    SaveToFile();
-                    _dataSource.Close();
-                }
+                // if (_curTask != null && !_curTask.isContinue)
+                // {
+                    // SaveToFile();
+                    // _dataSource.Close();
+                // }
             };
             _session.SourceChanged += (s, e) =>
             {
@@ -144,9 +144,15 @@ namespace scan_controller.Service
             if (!_dataSource.IsOpen) _dataSource.Open();
 
             SetCapability();
+            // ThreadPool.QueueUserWorkItem(
+            // o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
 
-            ThreadPool.QueueUserWorkItem(
-                o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
+            _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero);
+            while (_streamList.Count == 0)
+            {
+            }
+
+            SaveToFile();
         }
 
         public ScannerSpec GetScannerCapability(int id)
@@ -317,68 +323,78 @@ namespace scan_controller.Service
 
         private void SaveToFile()
         {
-            // Dir 생성
-            var dir = new DirectoryInfo(_curTask.savePath + _curTask.id);
-            if (dir.Exists == false) dir.Create();
-            // Dir에 저장
-            if (_curTask.fileExt == ".pdf")
+            try
             {
-                var doc = new PdfDocument();
-                // pdfSize setting 
-                var pdfSize = PageSize.A4;
-                switch (_curTask.scanMode.paperSizeMode)
+                // Dir 생성
+                var dir = new DirectoryInfo(_curTask.savePath + _curTask.id);
+                if (dir.Exists == false) dir.Create();
+                // Dir에 저장
+                if (_curTask.fileExt == ".pdf")
                 {
-                    case "USLetter":
-                        pdfSize = PageSize.Letter;
-                        break;
-                    case "USLegal":
-                        pdfSize = PageSize.Legal;
-                        break;
-                    case "A3":
-                        pdfSize = PageSize.RA3;
-                        break;
-                    case "A4":
-                        pdfSize = PageSize.A4;
-                        break;
-                    case "A5":
-                        pdfSize = PageSize.A5;
-                        break;
-                    case "IsoB4":
-                        pdfSize = PageSize.B4;
-                        break;
-                    case "IsoB5":
-                        pdfSize = PageSize.B4;
-                        break;
-                }
+                    var doc = new PdfDocument();
+                    // pdfSize setting 
+                    var pdfSize = PageSize.A4;
+                    switch (_curTask.scanMode.paperSizeMode)
+                    {
+                        case "USLetter":
+                            pdfSize = PageSize.Letter;
+                            break;
+                        case "USLegal":
+                            pdfSize = PageSize.Legal;
+                            break;
+                        case "A3":
+                            pdfSize = PageSize.RA3;
+                            break;
+                        case "A4":
+                            pdfSize = PageSize.A4;
+                            break;
+                        case "A5":
+                            pdfSize = PageSize.A5;
+                            break;
+                        case "IsoB4":
+                            pdfSize = PageSize.B4;
+                            break;
+                        case "IsoB5":
+                            pdfSize = PageSize.B4;
+                            break;
+                    }
 
-                // pdfDirection setting
-                var pdfDirection = PageOrientation.Portrait;
-                if (_curTask.scanMode.paperDirection == "horizontal") pdfDirection = PageOrientation.Landscape;
-                for (var i = 0; i < _streamList.Count; i++)
+                    // pdfDirection setting
+                    var pdfDirection = PageOrientation.Portrait;
+                    if (_curTask.scanMode.paperDirection == "horizontal") pdfDirection = PageOrientation.Landscape;
+                    for (var i = 0; i < _streamList.Count; i++)
+                    {
+                        // http://pdfsharp.net/wiki/PageSizes-sample.ashx
+                        var page = doc.AddPage();
+                        page.Size = pdfSize;
+                        page.Orientation = pdfDirection;
+                        var xgr = XGraphics.FromPdfPage(page);
+                        var img = XImage.FromStream(_streamList[i]);
+                        xgr.DrawImage(img, 0, 0);
+                    }
+
+                    doc.Save(_curTask.savePath + _curTask.id + "/000000" + _curTask.fileExt);
+                    doc.Close();
+                }
+                else
                 {
-                    // http://pdfsharp.net/wiki/PageSizes-sample.ashx
-                    var page = doc.AddPage();
-                    page.Size = pdfSize;
-                    page.Orientation = pdfDirection;
-                    var xgr = XGraphics.FromPdfPage(page);
-                    var img = XImage.FromStream(_streamList[i]);
-                    xgr.DrawImage(img, 0, 0);
+                    for (var i = 0; i < _streamList.Count; i++)
+                    {
+                        var fileName = _curTask.savePath + _curTask.id + "/" + i + _curTask.fileExt;
+                        Image.Load(_streamList[i]).Save(fileName);
+                    }
                 }
-
-                doc.Save(_curTask.savePath + _curTask.id + "/000000" + _curTask.fileExt);
-                doc.Close();
             }
-            else
+            catch (Exception e)
             {
-                for (var i = 0; i < _streamList.Count; i++)
-                {
-                    var fileName = _curTask.savePath + _curTask.id + "/" + i + _curTask.fileExt;
-                    Image.Load(_streamList[i]).Save(fileName);
-                }
+                throw;
             }
-
-            _streamList.Clear();
-            _curTask = null;
+            finally
+            {
+                _streamList.Clear();
+                _curTask = null;
+                _dataSource.Close();
+            }
         }
     }
 }
