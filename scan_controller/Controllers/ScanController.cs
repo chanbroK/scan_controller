@@ -12,12 +12,7 @@ namespace scan_controller.Controllers
     [RoutePrefix("api/scan")]
     public class ScanController : ApiController
     {
-        private static ScanService _scanService;
-
-        public ScanController()
-        {
-            if (_scanService == null) _scanService = new ScanService();
-        }
+        private static readonly ScanService ScanService = new ScanService();
 
 
         [Route("session")]
@@ -26,7 +21,7 @@ namespace scan_controller.Controllers
         {
             try
             {
-                _scanService.DeleteSession();
+                ScanService.DeleteSession();
                 return new Response(200, null, "Success Delete Session");
             }
             catch (Exception e)
@@ -41,7 +36,7 @@ namespace scan_controller.Controllers
         {
             try
             {
-                var sourceList = _scanService.GetDataSourceList();
+                var sourceList = ScanService.GetDataSourceList();
                 var sourceNameList = new List<string>();
                 foreach (var ds in sourceList) sourceNameList.Add(ds.Name);
                 var response = new Response(200, sourceNameList, "Success Get DataSource");
@@ -59,8 +54,7 @@ namespace scan_controller.Controllers
         {
             try
             {
-                _scanService.SetDataSource(id);
-                return new Response(200, null, "Success Set Datasource");
+                return new Response(200, ScanService.SetDataSource(id), "Success Set Datasource");
             }
             catch (Exception e)
             {
@@ -76,7 +70,7 @@ namespace scan_controller.Controllers
             {
                 if (scanTask.id == null)
                     scanTask.id = HashUtil.GetGuid();
-                _scanService.StartTask(scanTask);
+                ScanService.StartTask(scanTask);
 
                 return new Response(200, scanTask.id, "Success Task");
             }
@@ -134,7 +128,7 @@ namespace scan_controller.Controllers
         {
             try
             {
-                _scanService.EndContinueScan(taskId);
+                ScanService.EndContinueScan(taskId);
                 return new Response(200, taskId, "Success Delete Continue Task");
             }
             catch (Exception e)
@@ -178,10 +172,12 @@ namespace scan_controller.Controllers
         {
             try
             {
-                return new Response(200, _scanService.GetScannerCapability(id), "Success Get Scanner Spec");
+                return new Response(200, ScanService.GetScannerCapability(id), "Success Get Scanner Spec");
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
                 return new Response(500, e, "Failed Get Scanner Spec");
             }
         }
@@ -193,7 +189,7 @@ namespace scan_controller.Controllers
         {
             try
             {
-                return new Response(200, _scanService.getState(), "Success Get State");
+                return new Response(200, ScanService.GetState(), "Success Get State");
             }
             catch (Exception e)
             {

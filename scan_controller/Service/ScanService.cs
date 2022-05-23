@@ -18,8 +18,8 @@ namespace scan_controller.Service
     public class ScanService
     {
         private static TwainSession _session;
-        private static DataSource _dataSource;
-
+        private static DataSource _curDataSource;
+        private readonly List<DataSource> _dataSourceList = new List<DataSource>();
         private readonly List<Stream> _streamList = new List<Stream>();
         private ScanTask _curTask;
 
@@ -67,8 +67,8 @@ namespace scan_controller.Service
                 Console.WriteLine("스캔 결과 전송 완료");
                 // if (_curTask != null && !_curTask.isContinue)
                 // {
-                    // SaveToFile();
-                    // _dataSource.Close();
+                // SaveToFile();
+                // _dataSource.Close();
                 // }
             };
             _session.SourceChanged += (s, e) =>
@@ -89,8 +89,7 @@ namespace scan_controller.Service
             };
 
             OpenSession();
-            // default datasource 설정 TODO remove
-            _dataSource = _session.GetSources().ToList()[2];
+            LoadDataSource();
         }
 
         private void OpenSession()
@@ -102,25 +101,41 @@ namespace scan_controller.Service
 
         public void DeleteSession()
         {
-            if (_dataSource.IsOpen) _dataSource.Close();
+            if (_curDataSource.IsOpen) _curDataSource.Close();
             if (_session.IsDsmOpen) _session.Close();
             Console.WriteLine("Session[Released]");
         }
 
-        public List<DataSource> GetDataSourceList()
+        private void LoadDataSource()
         {
-            if (!_session.IsDsmOpen) OpenSession();
-            var result = _session.GetSources().ToList();
-            return result;
+            foreach (var ds in _session.GetSources().ToList())
+                try
+                {
+                    ds.Open();
+                    if (_session.State == 4) _dataSourceList.Add(ds);
+                    ds.Close();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Not Supported " + ds.Name);
+                }
+
+            // set Default DataSource
+            _curDataSource = _dataSourceList[0];
         }
 
-        public void SetDataSource(int id)
+        public List<DataSource> GetDataSourceList()
+        {
+            return _dataSourceList;
+        }
+
+        public string SetDataSource(int id)
         {
             // 이전의 datasource close
-            if (!_session.IsDsmOpen) OpenSession();
-            if (_dataSource != null && _dataSource.IsOpen) _dataSource.Close();
-            _dataSource = _session.GetSources().ToList()[id];
-            _dataSource.Open();
+            if (_curDataSource != null && _curDataSource.IsOpen) _curDataSource.Close();
+            _curDataSource = _dataSourceList[id];
+            _curDataSource.Open();
+            return _curDataSource.Name;
         }
 
 
@@ -141,13 +156,13 @@ namespace scan_controller.Service
         private void Scan()
         {
             if (!_session.IsDsmOpen) OpenSession();
-            if (!_dataSource.IsOpen) _dataSource.Open();
+            if (!_curDataSource.IsOpen) _curDataSource.Open();
 
             SetCapability();
             // ThreadPool.QueueUserWorkItem(
             // o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
 
-            _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero);
+            _curDataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero);
             while (_streamList.Count == 0)
             {
             }
@@ -158,16 +173,16 @@ namespace scan_controller.Service
         public ScannerSpec GetScannerCapability(int id)
         {
             if (!_session.IsDsmOpen) OpenSession();
-            _dataSource = _session.GetSources().ToList()[id];
-            if (!_dataSource.IsOpen) _dataSource.Open();
+            _curDataSource = _session.GetSources().ToList()[id];
+            if (!_curDataSource.IsOpen) _curDataSource.Open();
 
 
             var spec = new ScannerSpec();
 
-            var caps = _dataSource.Capabilities;
+            var caps = _curDataSource.Capabilities;
 
             // 스캐너 이름
-            spec.name = _dataSource.Name;
+            spec.name = _curDataSource.Name;
             // 색상 방식
             foreach (var v in caps.ICapPixelType.GetValues()) spec.colorMode.Add(v.ToString());
 
@@ -201,11 +216,11 @@ namespace scan_controller.Service
             // 용지 방향
             spec.paperDirection.Add("vertical");
             spec.paperDirection.Add("horizontal");
-            _dataSource.Close();
+            _curDataSource.Close();
             return spec;
         }
 
-        public int getState()
+        public int GetState()
         {
             return _session.State;
         }
@@ -213,9 +228,9 @@ namespace scan_controller.Service
         private void SetCapability()
         {
             if (!_session.IsDsmOpen) OpenSession();
-            if (!_dataSource.IsOpen) _dataSource.Open();
+            if (!_curDataSource.IsOpen) _curDataSource.Open();
 
-            var caps = _dataSource.Capabilities;
+            var caps = _curDataSource.Capabilities;
 
             // Legacy UI 삭제
             caps.CapIndicators.SetValue(EnumUtil<BoolType>.Parse(_curTask.scanMode.showLegacyUI.ToString()));
@@ -308,8 +323,8 @@ namespace scan_controller.Service
             }
 
             // set DS unit to inch
-            _dataSource.Capabilities.ICapUnits.SetValue(Unit.Inches);
-            _dataSource.DGImage.ImageLayout.Get(out var imageLayout);
+            _curDataSource.Capabilities.ICapUnits.SetValue(Unit.Inches);
+            _curDataSource.DGImage.ImageLayout.Get(out var imageLayout);
             // create new TWFrame
             imageLayout.Frame = new TWFrame
             {
@@ -318,7 +333,7 @@ namespace scan_controller.Service
                 Top = 0,
                 Bottom = height
             };
-            _dataSource.DGImage.ImageLayout.Set(imageLayout);
+            _curDataSource.DGImage.ImageLayout.Set(imageLayout);
         }
 
         private void SaveToFile()
@@ -385,15 +400,11 @@ namespace scan_controller.Service
                     }
                 }
             }
-            catch (Exception e)
-            {
-                throw;
-            }
             finally
             {
                 _streamList.Clear();
                 _curTask = null;
-                _dataSource.Close();
+                _curDataSource.Close();
             }
         }
     }
