@@ -131,6 +131,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="DTOSample\ContinueScanTask.json" />
+    <Content Include="DTOSample\ScanMode.json" />
     <Content Include="Global.asax" />
     <Content Include="DTOSample\SavePath.json" />
     <Content Include="DTOSample\ScannerSpec.json" />
@@ -145,10 +146,10 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\DTO\Response.cs" />
+    <Compile Include="Models\DTO\ScanMode.cs" />
     <Compile Include="Models\DTO\ScannerSpec.cs" />
     <Compile Include="Models\DTO\ScanTask.cs" />
     <Compile Include="Models\Exception\AlreadyUsingException.cs" />
-    <Compile Include="Models\ScanMode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\ScanService.cs" />
     <Compile Include="Util\EnumUtil.cs" />

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace scan_controller.Models
+namespace scan_controller.Models.DTO
 {
     public class ScannerSpec
         // Response로 전송될때 enum은 int 형식으로 변환된다. -> client 를 위해 string 형식으로 저장

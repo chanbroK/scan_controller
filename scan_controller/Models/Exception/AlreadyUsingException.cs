@@ -1,8 +1,6 @@
-﻿using System;
-
-namespace scan_controller.Models
+﻿namespace scan_controller.Models.Exception
 {
-    public class AlreadyUsingException : Exception
+    public class AlreadyUsingException : System.Exception
     {
         public string newTaskId;
         public string oldTaskId;

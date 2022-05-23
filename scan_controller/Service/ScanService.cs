@@ -9,7 +9,8 @@ using NTwain.Data;
 using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
-using scan_controller.Models;
+using scan_controller.Models.DTO;
+using scan_controller.Models.Exception;
 using scan_controller.Util;
 using SixLabors.ImageSharp;
 

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Web.Http;
-using scan_controller.Models;
+using scan_controller.Models.DTO;
+using scan_controller.Models.Exception;
 using scan_controller.Service;
 using scan_controller.Util;
 
@@ -30,7 +31,7 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
-                return new Response(500, e, "Failed Delete Session");
+                return new Response(404, e, "Failed Delete Session");
             }
         }
 
@@ -48,7 +49,7 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
-                return new Response(500, e, "Failed Get DataSource");
+                return new Response(404, e, "Failed Get DataSource");
             }
         }
 

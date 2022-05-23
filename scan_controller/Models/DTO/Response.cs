@@ -1,4 +1,4 @@
-﻿namespace scan_controller.Models
+﻿namespace scan_controller.Models.DTO
 {
     public class Response
     {
