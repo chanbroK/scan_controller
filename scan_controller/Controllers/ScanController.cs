@@ -85,50 +85,13 @@ namespace scan_controller.Controllers
             }
         }
 
-        //
-        // [Route("task/continue")]
-        // [HttpPost]
-        // public Response StartContinueTask(ScanTask scanTask)
-        // {
-        //     try
-        //     {
-        //         var taskId = HashUtil.GetMD5Id();
-        //         _scanService.SetCapability(scanTask.scanMode);
-        //         _scanService.StartContinueTask(taskId, scanTask.fileExt);
-        //         return new Response(200, taskId, "Success Start Continue Task");
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         Console.WriteLine(e.Message);
-        //         Console.WriteLine(e.StackTrace);
-        //         return new Response(500, e, "Failed Start Continue Task");
-        //     }
-        // }
-
-        // [Route("task/continue")]
-        // [HttpPost]
-        // public Response ContinueTask([FromUri] string taskId, [FromBody] ScanTask scanTask)
-        // {
-        //     try
-        //     {
-        //         _scanService.SetCapability(scanTask.scanMode);
-        //         _scanService.ContinueTask(taskId);
-        //         // capability 적용을 안하면 초기화되서 default 값으로 실행됨
-        //         return new Response(200, taskId, "Success ContinueTask");
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         return new Response(500, e, "Failed ContinueTask");
-        //     }
-        // }
-
         [Route("task")]
         [HttpDelete]
-        public Response DeleteContinueTask(string taskId)
+        public Response DeleteTask(string taskId)
         {
             try
             {
-                ScanService.EndContinueScan(taskId);
+                ScanService.EndScan(taskId);
                 return new Response(200, taskId, "Success Delete Continue Task");
             }
             catch (Exception e)
@@ -136,35 +99,6 @@ namespace scan_controller.Controllers
                 return new Response(500, e, "Failed Delete Continue Task");
             }
         }
-
-        // [Route("save_path")]
-        // [HttpGet]
-        // public Response GetSavePath()
-        // {
-        //     try
-        //     {
-        //         return new Response(200, _scanService.GetSavePath(), "Success Get Save Path");
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         return new Response(500, e, "Failed Get Save Path");
-        //     }
-        // }
-        //
-        // [Route("save_path")]
-        // [HttpPatch]
-        // public Response SetSavePath(string savePath)
-        // {
-        //     try
-        //     {
-        //         _scanService.SetSavePath(savePath);
-        //         return new Response(200, savePath, "Success Set Save Path");
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         return new Response(500, e, "Failed Set Save Path");
-        //     }
-        // }
 
         [Route("spec")]
         [HttpGet]
@@ -184,7 +118,6 @@ namespace scan_controller.Controllers
 
         [Route("state")]
         [HttpGet]
-        // TODO Twain State 별 설명 
         public Response GetState()
         {
             try
@@ -196,5 +129,7 @@ namespace scan_controller.Controllers
                 return new Response(500, e, "failed Get State");
             }
         }
+        
+        
     }
 }

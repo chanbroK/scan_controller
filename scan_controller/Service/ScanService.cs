@@ -22,6 +22,8 @@ namespace scan_controller.Service
         private readonly List<DataSource> _dataSourceList = new List<DataSource>();
         private readonly List<Stream> _streamList = new List<Stream>();
         private ScanTask _curTask;
+        private bool _isScanEnd;
+        private int _state;
 
         public ScanService()
         {
@@ -42,17 +44,16 @@ namespace scan_controller.Service
 
             // Session 상태 별 handler 설정
             // DSM이 load되어 Session이 생성될때 handler가 등록됨(추후 close 되어도 유지된다.)
-            _session.TransferReady += (s, e) => { Console.WriteLine("스캔 시작"); };
+            _session.TransferReady += (s, e) =>
+            {
+                _isScanEnd = false;
+                Console.WriteLine("스캔 시작");
+            };
             _session.DataTransferred += (s, e) =>
             {
                 Console.WriteLine("스캔 결과 전송 시작");
                 var stream = e.GetNativeImageStream();
                 _streamList.Add(stream);
-                //
-                // if (_fileExt == ".pdf")
-                //     SaveToPdf(stream);
-                // else
-                //     SaveToImage(stream);
                 Console.WriteLine(e.NativeData != IntPtr.Zero
                     ? "스캔 성공"
                     : "스캔 실패");
@@ -65,11 +66,7 @@ namespace scan_controller.Service
             {
                 // sate5 -> state4
                 Console.WriteLine("스캔 결과 전송 완료");
-                // if (_curTask != null && !_curTask.isContinue)
-                // {
-                // SaveToFile();
-                // _dataSource.Close();
-                // }
+                _isScanEnd = true;
             };
             _session.SourceChanged += (s, e) =>
             {
@@ -77,6 +74,8 @@ namespace scan_controller.Service
             };
             _session.DeviceEvent += (s, e) =>
             {
+                Console.WriteLine(s);
+                Console.WriteLine(e);
                 // DS의 자체 이벤트 발생
             };
             _session.PropertyChanged += (s, e) =>
@@ -96,6 +95,7 @@ namespace scan_controller.Service
         {
             // Twain Session Open 
             _session.Open();
+            _state = 0;
             Console.WriteLine("Session[Open]");
         }
 
@@ -121,7 +121,7 @@ namespace scan_controller.Service
                 }
 
             // set Default DataSource
-            _curDataSource = _dataSourceList[0];
+            SetDataSource(0);
         }
 
         public List<DataSource> GetDataSourceList()
@@ -131,10 +131,10 @@ namespace scan_controller.Service
 
         public string SetDataSource(int id)
         {
-            // 이전의 datasource close
             if (_curDataSource != null && _curDataSource.IsOpen) _curDataSource.Close();
             _curDataSource = _dataSourceList[id];
             _curDataSource.Open();
+            _state = 1;
             return _curDataSource.Name;
         }
 
@@ -146,7 +146,7 @@ namespace scan_controller.Service
             Scan();
         }
 
-        public void EndContinueScan(string taskId)
+        public void EndScan(string taskId)
         {
             if (_curTask.id != taskId)
                 throw new ArgumentException(_curTask.id + "!=" + taskId, nameof(taskId));
@@ -155,6 +155,7 @@ namespace scan_controller.Service
 
         private void Scan()
         {
+            _state = 2;
             if (!_session.IsDsmOpen) OpenSession();
             if (!_curDataSource.IsOpen) _curDataSource.Open();
 
@@ -163,11 +164,15 @@ namespace scan_controller.Service
             // o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
 
             _curDataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero);
-            while (_streamList.Count == 0)
+            while (!_isScanEnd)
             {
+                // 스캔 대기
             }
 
-            SaveToFile();
+            if (!_curTask.isContinue)
+                SaveToFile();
+            else
+                _state = 3;
         }
 
         public ScannerSpec GetScannerCapability(int id)
@@ -222,7 +227,7 @@ namespace scan_controller.Service
 
         public int GetState()
         {
-            return _session.State;
+            return _state;
         }
 
         private void SetCapability()
@@ -336,10 +341,18 @@ namespace scan_controller.Service
             _curDataSource.DGImage.ImageLayout.Set(imageLayout);
         }
 
+        public void cleanTask()
+        {
+            _curTask = null;
+            _curDataSource.Close();
+            _curDataSource.Open();
+        }
+
         private void SaveToFile()
         {
             try
             {
+                _state = 4;
                 // Dir 생성
                 var dir = new DirectoryInfo(_curTask.savePath + _curTask.id);
                 if (dir.Exists == false) dir.Create();
@@ -405,6 +418,7 @@ namespace scan_controller.Service
                 _streamList.Clear();
                 _curTask = null;
                 _curDataSource.Close();
+                _state = 1;
             }
         }
     }
