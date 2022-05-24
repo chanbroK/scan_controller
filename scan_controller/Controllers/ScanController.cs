@@ -92,11 +92,11 @@ namespace scan_controller.Controllers
             try
             {
                 ScanService.EndScan(taskId);
-                return new Response(200, taskId, "Success Delete Continue Task");
+                return new Response(200, taskId, "Success Delete Task");
             }
             catch (Exception e)
             {
-                return new Response(500, e, "Failed Delete Continue Task");
+                return new Response(500, e, "Failed Delete Task");
             }
         }
 
