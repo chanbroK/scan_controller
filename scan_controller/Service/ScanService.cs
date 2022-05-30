@@ -44,29 +44,24 @@ namespace scan_controller.Service
 
             // Session 상태 별 handler 설정
             // DSM이 load되어 Session이 생성될때 handler가 등록됨(추후 close 되어도 유지된다.)
-            _session.TransferReady += (s, e) =>
-            {
-                Console.WriteLine("스캔 시작");
-            };
+            _session.TransferReady += (s, e) => { Console.WriteLine("스캔 시작"); };
             _session.DataTransferred += (s, e) =>
             {
-                Console.WriteLine("스캔 결과 전송 시작");
-                var stream = e.GetNativeImageStream();
-                _streamList.Add(stream);
+                _streamList.Add(e.GetNativeImageStream());
                 Console.WriteLine(e.NativeData != IntPtr.Zero
                     ? "스캔 성공"
                     : "스캔 실패");
             };
             _session.TransferError += (s, e) =>
             {
-                Console.WriteLine("TransferError!!");
                 // 스캔 결과 전송 에러 발생
+                Console.WriteLine("TransferError!!");
                 Console.WriteLine(e.Exception.Message);
             };
             _session.SourceDisabled += (s, e) =>
             {
                 // sate5 -> state4
-                Console.WriteLine("스캔 결과 전송 완료");
+                Console.WriteLine("스캔 완료");
                 _isScanEnd = true;
             };
             _session.SourceChanged += (s, e) =>
@@ -120,7 +115,7 @@ namespace scan_controller.Service
                     Console.WriteLine("Not Supported " + ds.Name);
                 }
 
-            // set Default DataSource
+            // TODO remove set Default DataSource
             SetDataSource(0);
         }
 
@@ -178,13 +173,12 @@ namespace scan_controller.Service
         public ScannerSpec GetScannerCapability(int id)
         {
             if (!_session.IsDsmOpen) OpenSession();
-            _curDataSource = _session.GetSources().ToList()[id];
             if (!_curDataSource.IsOpen) _curDataSource.Open();
 
 
             var spec = new ScannerSpec();
 
-            var caps = _curDataSource.Capabilities;
+            var caps = _dataSourceList[id].Capabilities;
 
             // 스캐너 이름
             spec.name = _curDataSource.Name;
@@ -339,13 +333,6 @@ namespace scan_controller.Service
                 Bottom = height
             };
             _curDataSource.DGImage.ImageLayout.Set(imageLayout);
-        }
-
-        public void cleanTask()
-        {
-            _curTask = null;
-            _curDataSource.Close();
-            _curDataSource.Open();
         }
 
         private void SaveToFile()
