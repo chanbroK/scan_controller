@@ -89,18 +89,19 @@ namespace scan_controller.Controllers
             {
                 if (scanTask.id == null)
                     scanTask.id = HashUtil.GetGuid();
-                ScanService.StartTask(scanTask);
-
-                return new Response(0, scanTask.id, "Success Task");
+                var isScannerErrorOccured = ScanService.StartScan(scanTask);
+                if (isScannerErrorOccured)
+                    return new Response(-1, scanTask.id, "Failed task \n Scanner error is occured");
+                return new Response(0, scanTask.id, "Success task");
             }
             catch (AlreadyUsingException e)
             {
-                return new Response(409, e,
-                    "Failed Task[Scanner is Already Using] [new]" + e.newTaskId + "!=[old]" + e.oldTaskId);
+                return new Response(2, e,
+                    "Failed task \n [input task id]" + e.InputTaskId + "!=[current task id]" + e.CurTaskId);
             }
             catch (Exception e)
             {
-                return new Response(1, e, "Failed Task");
+                return new Response(1, e, "Failed task");
             }
         }
 
@@ -111,7 +112,12 @@ namespace scan_controller.Controllers
             try
             {
                 ScanService.EndScan(taskId);
-                return new Response(200, taskId, "Success Delete Task");
+                return new Response(0, taskId, "Success delete task");
+            }
+            catch (NotMatchedTaskIdException e)
+            {
+                return new Response(-1, e,
+                    "Failed Delete task \n  [input task id]" + e.InputTaskId + "!=[current task id]" + e.CurTaskId);
             }
             catch (Exception e)
             {

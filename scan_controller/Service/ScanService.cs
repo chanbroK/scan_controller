@@ -23,6 +23,7 @@ namespace scan_controller.Service
         private readonly List<Stream> _streamList = new List<Stream>();
         private ScanTask _curTask;
         private bool _isScanEnd;
+        private bool _isScannerErrorOccured;
         private int _state;
 
         public ScanService()
@@ -56,6 +57,7 @@ namespace scan_controller.Service
             {
                 // 스캔 결과 전송 에러 발생
                 Console.WriteLine("TransferError!!");
+                _isScannerErrorOccured = true;
                 Console.WriteLine(e.Exception.Message);
             };
             _session.SourceDisabled += (s, e) =>
@@ -84,6 +86,8 @@ namespace scan_controller.Service
 
             OpenSession();
             LoadDataSource();
+            // TODO remove set Default DataSource
+            SetDataSource(0);
         }
 
         private void OpenSession()
@@ -103,6 +107,7 @@ namespace scan_controller.Service
 
         public void LoadDataSource()
         {
+            _dataSourceList.Clear();
             foreach (var ds in _session.GetSources().ToList())
                 try
                 {
@@ -114,9 +119,6 @@ namespace scan_controller.Service
                 {
                     Console.WriteLine("Not Supported " + ds.Name);
                 }
-
-            // TODO remove set Default DataSource
-            SetDataSource(0);
         }
 
         public List<DataSource> GetDataSourceList()
@@ -134,17 +136,21 @@ namespace scan_controller.Service
         }
 
 
-        public void StartTask(ScanTask newTask)
+        public bool StartScan(ScanTask newTask)
         {
+            _isScannerErrorOccured = true;
+
             if (_curTask != null && _curTask.id != newTask.id) throw new AlreadyUsingException(newTask.id, _curTask.id);
             _curTask = newTask;
             Scan();
+
+            return _isScannerErrorOccured;
         }
 
         public void EndScan(string taskId)
         {
             if (_curTask.id != taskId)
-                throw new ArgumentException(_curTask.id + "!=" + taskId, nameof(taskId));
+                throw new NotMatchedTaskIdException(taskId, _curTask.id);
             SaveToFile();
         }
 
@@ -155,8 +161,10 @@ namespace scan_controller.Service
             if (!_curDataSource.IsOpen) _curDataSource.Open();
 
             SetCapability();
+
             // ThreadPool.QueueUserWorkItem(
             // o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
+
             _isScanEnd = false;
             _curDataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero);
             while (!_isScanEnd)
@@ -172,8 +180,8 @@ namespace scan_controller.Service
 
         public ScannerSpec GetScannerCapability(int id)
         {
-            if (!_session.IsDsmOpen) OpenSession();
-            if (!_curDataSource.IsOpen) _curDataSource.Open();
+            // if (!_session.IsDsmOpen) OpenSession();
+            // if (!_curDataSource.IsOpen) _curDataSource.Open();
 
 
             var spec = new ScannerSpec();
@@ -226,8 +234,8 @@ namespace scan_controller.Service
 
         private void SetCapability()
         {
-            if (!_session.IsDsmOpen) OpenSession();
-            if (!_curDataSource.IsOpen) _curDataSource.Open();
+            // if (!_session.IsDsmOpen) OpenSession();
+            // if (!_curDataSource.IsOpen) _curDataSource.Open();
 
             var caps = _curDataSource.Capabilities;
 
@@ -405,7 +413,6 @@ namespace scan_controller.Service
             {
                 _streamList.Clear();
                 _curTask = null;
-                _curDataSource.Close();
                 Console.WriteLine("스캔 결과 저장 완료");
                 _state = 1;
             }

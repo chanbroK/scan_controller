@@ -1,12 +1,12 @@
 ﻿namespace scan_controller.Models.Exception
 {
-    public class AlreadyUsingException : System.Exception
+    public class NotMatchedTaskIdException : System.Exception
     {
         public readonly string CurTaskId;
         public readonly string InputTaskId;
 
 
-        public AlreadyUsingException(string inputTaskId, string curTaskId)
+        public NotMatchedTaskIdException(string inputTaskId, string curTaskId)
         {
             InputTaskId = inputTaskId;
             CurTaskId = curTaskId;
