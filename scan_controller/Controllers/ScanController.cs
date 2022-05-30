@@ -48,6 +48,25 @@ namespace scan_controller.Controllers
             }
         }
 
+        [Route("datasource/refresh")]
+        [HttpGet]
+        public Response GetRefreshDatasource()
+        {
+            try
+            {
+                ScanService.LoadDataSource();
+                var sourceList = ScanService.GetDataSourceList();
+                var sourceNameList = new List<string>();
+                foreach (var ds in sourceList) sourceNameList.Add(ds.Name);
+                var response = new Response(200, sourceNameList, "Success Get DataSource");
+                return response;
+            }
+            catch (Exception e)
+            {
+                return new Response(404, e, "Failed Get DataSource");
+            }
+        }
+
         [Route("datasource")]
         [HttpPatch]
         public Response SetDatasource(int id)

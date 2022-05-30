@@ -101,7 +101,7 @@ namespace scan_controller.Service
             Console.WriteLine("Session[Released]");
         }
 
-        private void LoadDataSource()
+        public void LoadDataSource()
         {
             foreach (var ds in _session.GetSources().ToList())
                 try
