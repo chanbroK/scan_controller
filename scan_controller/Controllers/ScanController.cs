@@ -22,11 +22,11 @@ namespace scan_controller.Controllers
             try
             {
                 ScanService.DeleteSession();
-                return new Response(200, null, "Success Delete Session");
+                return new Response(0, null, "Success Delete Session");
             }
             catch (Exception e)
             {
-                return new Response(404, e, "Failed Delete Session");
+                return new Response(-1, e, "Failed Delete Session");
             }
         }
 
@@ -39,12 +39,12 @@ namespace scan_controller.Controllers
                 var sourceList = ScanService.GetDataSourceList();
                 var sourceNameList = new List<string>();
                 foreach (var ds in sourceList) sourceNameList.Add(ds.Name);
-                var response = new Response(200, sourceNameList, "Success Get DataSource");
+                var response = new Response(0, sourceNameList, "Success Get DataSource");
                 return response;
             }
             catch (Exception e)
             {
-                return new Response(404, e, "Failed Get DataSource");
+                return new Response(-1, e, "Failed Get DataSource");
             }
         }
 
@@ -58,12 +58,12 @@ namespace scan_controller.Controllers
                 var sourceList = ScanService.GetDataSourceList();
                 var sourceNameList = new List<string>();
                 foreach (var ds in sourceList) sourceNameList.Add(ds.Name);
-                var response = new Response(200, sourceNameList, "Success Get DataSource");
+                var response = new Response(0, sourceNameList, "Success Get DataSource");
                 return response;
             }
             catch (Exception e)
             {
-                return new Response(404, e, "Failed Get DataSource");
+                return new Response(-1, e, "Failed Get DataSource");
             }
         }
 
@@ -73,11 +73,11 @@ namespace scan_controller.Controllers
         {
             try
             {
-                return new Response(200, ScanService.SetDataSource(id), "Success Set Datasource");
+                return new Response(0, ScanService.SetDataSource(id), "Success Set Datasource");
             }
             catch (Exception e)
             {
-                return new Response(500, e, "Failed Set Datasource");
+                return new Response(-1, e, "Failed Set Datasource");
             }
         }
 
@@ -96,12 +96,12 @@ namespace scan_controller.Controllers
             }
             catch (AlreadyUsingException e)
             {
-                return new Response(2, e,
+                return new Response(1, e,
                     "Failed task \n [input task id]" + e.InputTaskId + "!=[current task id]" + e.CurTaskId);
             }
             catch (Exception e)
             {
-                return new Response(1, e, "Failed task");
+                return new Response(-1, e, "Failed task");
             }
         }
 
@@ -116,12 +116,12 @@ namespace scan_controller.Controllers
             }
             catch (NotMatchedTaskIdException e)
             {
-                return new Response(-1, e,
+                return new Response(1, e,
                     "Failed Delete task \n  [input task id]" + e.InputTaskId + "!=[current task id]" + e.CurTaskId);
             }
             catch (Exception e)
             {
-                return new Response(500, e, "Failed Delete Task");
+                return new Response(-1, e, "Failed Delete Task");
             }
         }
 
@@ -131,13 +131,13 @@ namespace scan_controller.Controllers
         {
             try
             {
-                return new Response(200, ScanService.GetScannerCapability(id), "Success Get Scanner Spec");
+                return new Response(0, ScanService.GetScannerCapability(id), "Success Get Scanner Spec");
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
-                return new Response(500, e, "Failed Get Scanner Spec");
+                return new Response(-1, e, "Failed Get Scanner Spec");
             }
         }
 
@@ -147,11 +147,11 @@ namespace scan_controller.Controllers
         {
             try
             {
-                return new Response(200, ScanService.GetState(), "Success Get State");
+                return new Response(0, ScanService.GetState(), "Success Get State");
             }
             catch (Exception e)
             {
-                return new Response(500, e, "failed Get State");
+                return new Response(-1, e, "failed Get State");
             }
         }
     }
