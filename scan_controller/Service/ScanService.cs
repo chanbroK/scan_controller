@@ -46,7 +46,6 @@ namespace scan_controller.Service
             // DSM이 load되어 Session이 생성될때 handler가 등록됨(추후 close 되어도 유지된다.)
             _session.TransferReady += (s, e) =>
             {
-                _isScanEnd = false;
                 Console.WriteLine("스캔 시작");
             };
             _session.DataTransferred += (s, e) =>
@@ -60,7 +59,9 @@ namespace scan_controller.Service
             };
             _session.TransferError += (s, e) =>
             {
+                Console.WriteLine("TransferError!!");
                 // 스캔 결과 전송 에러 발생
+                Console.WriteLine(e.Exception.Message);
             };
             _session.SourceDisabled += (s, e) =>
             {
@@ -74,8 +75,7 @@ namespace scan_controller.Service
             };
             _session.DeviceEvent += (s, e) =>
             {
-                Console.WriteLine(s);
-                Console.WriteLine(e);
+                Console.WriteLine("DeviceEvent!!");
                 // DS의 자체 이벤트 발생
             };
             _session.PropertyChanged += (s, e) =>
@@ -162,7 +162,7 @@ namespace scan_controller.Service
             SetCapability();
             // ThreadPool.QueueUserWorkItem(
             // o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
-
+            _isScanEnd = false;
             _curDataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero);
             while (!_isScanEnd)
             {
@@ -350,6 +350,7 @@ namespace scan_controller.Service
 
         private void SaveToFile()
         {
+            Console.WriteLine("스캔 결과 저장 시작");
             try
             {
                 _state = 4;
@@ -418,6 +419,7 @@ namespace scan_controller.Service
                 _streamList.Clear();
                 _curTask = null;
                 _curDataSource.Close();
+                Console.WriteLine("스캔 결과 저장 완료");
                 _state = 1;
             }
         }

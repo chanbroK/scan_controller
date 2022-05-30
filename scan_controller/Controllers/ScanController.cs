@@ -72,7 +72,7 @@ namespace scan_controller.Controllers
                     scanTask.id = HashUtil.GetGuid();
                 ScanService.StartTask(scanTask);
 
-                return new Response(200, scanTask.id, "Success Task");
+                return new Response(0, scanTask.id, "Success Task");
             }
             catch (AlreadyUsingException e)
             {
@@ -81,7 +81,7 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
-                return new Response(500, e, "Failed Task");
+                return new Response(1, e, "Failed Task");
             }
         }
 
@@ -129,7 +129,5 @@ namespace scan_controller.Controllers
                 return new Response(500, e, "failed Get State");
             }
         }
-        
-        
     }
 }
