@@ -26,13 +26,15 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
                 return new Response(-1, e, "Failed Delete Session");
             }
         }
 
         [Route("datasource")]
         [HttpGet]
-        public Response GetDatasource()
+        public Response GetDataSource()
         {
             try
             {
@@ -44,13 +46,15 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
                 return new Response(-1, e, "Failed Get DataSource");
             }
         }
 
         [Route("datasource/refresh")]
         [HttpGet]
-        public Response GetRefreshDatasource()
+        public Response GetRefreshDataSource()
         {
             try
             {
@@ -58,12 +62,34 @@ namespace scan_controller.Controllers
                 var sourceList = ScanService.GetDataSourceList();
                 var sourceNameList = new List<string>();
                 foreach (var ds in sourceList) sourceNameList.Add(ds.Name);
-                var response = new Response(0, sourceNameList, "Success Get DataSource");
+                var response = new Response(0, sourceNameList, "Success Refresh DataSource");
                 return response;
             }
             catch (Exception e)
             {
-                return new Response(-1, e, "Failed Get DataSource");
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                return new Response(-1, e, "Failed Refresh DataSource");
+            }
+        }
+
+        [Route("datasource/spec")]
+        [HttpGet]
+        public Response GetDataSourceSpec(int id)
+        {
+            try
+            {
+                return new Response(0, ScanService.GetScannerCapability(id), "Success Get Datasource Spec");
+            }
+            catch (ArgumentOutOfRangeException e)
+            {
+                return new Response(1, null, "Failed Get Datasource Spec \n index is out of range");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                return new Response(-1, e, "Failed Get Datasource Spec");
             }
         }
 
@@ -75,8 +101,14 @@ namespace scan_controller.Controllers
             {
                 return new Response(0, ScanService.SetDataSource(id), "Success Set Datasource");
             }
+            catch (ArgumentOutOfRangeException e)
+            {
+                return new Response(1, null, "Failed Set Datasource \n index is out of range");
+            }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
                 return new Response(-1, e, "Failed Set Datasource");
             }
         }
@@ -101,6 +133,8 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
                 return new Response(-1, e, "Failed task");
             }
         }
@@ -112,34 +146,27 @@ namespace scan_controller.Controllers
             try
             {
                 ScanService.EndScan(taskId);
-                return new Response(0, taskId, "Success delete task");
+                return new Response(0, taskId, "Success delete Scan Task");
+            }
+            catch (NoTaskException e)
+            {
+                return new Response(1, null,
+                    "Failed Delete Scan Task \n  no task in controller");
             }
             catch (NotMatchedTaskIdException e)
             {
-                return new Response(1, e,
-                    "Failed Delete task \n  [input task id]" + e.InputTaskId + "!=[current task id]" + e.CurTaskId);
-            }
-            catch (Exception e)
-            {
-                return new Response(-1, e, "Failed Delete Task");
-            }
-        }
-
-        [Route("spec")]
-        [HttpGet]
-        public Response GetScannerSpec(int id)
-        {
-            try
-            {
-                return new Response(0, ScanService.GetScannerCapability(id), "Success Get Scanner Spec");
+                return new Response(1, null,
+                    "Failed Delete Scan Task \n  [input task id]" + e.InputTaskId + "!=[current task id]" +
+                    e.CurTaskId);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
-                return new Response(-1, e, "Failed Get Scanner Spec");
+                return new Response(-1, e, "Failed Delete Scan Task");
             }
         }
+
 
         [Route("state")]
         [HttpGet]
@@ -151,6 +178,8 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
                 return new Response(-1, e, "failed Get State");
             }
         }

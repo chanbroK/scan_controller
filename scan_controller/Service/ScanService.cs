@@ -149,6 +149,8 @@ namespace scan_controller.Service
 
         public void EndScan(string taskId)
         {
+            if (_curTask == null)
+                throw new NoTaskException();
             if (_curTask.id != taskId)
                 throw new NotMatchedTaskIdException(taskId, _curTask.id);
             SaveToFile();
@@ -189,7 +191,8 @@ namespace scan_controller.Service
             var caps = _dataSourceList[id].Capabilities;
 
             // 스캐너 이름
-            spec.name = _curDataSource.Name;
+
+            spec.name = _dataSourceList[id].Name;
             // 색상 방식
             foreach (var v in caps.ICapPixelType.GetValues()) spec.colorMode.Add(v.ToString());
 
@@ -223,7 +226,7 @@ namespace scan_controller.Service
             // 용지 방향
             spec.paperDirection.Add("vertical");
             spec.paperDirection.Add("horizontal");
-            _curDataSource.Close();
+
             return spec;
         }
 
