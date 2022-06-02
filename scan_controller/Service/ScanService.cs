@@ -138,7 +138,7 @@ namespace scan_controller.Service
 
         public bool StartScan(ScanTask newTask)
         {
-            _isScannerErrorOccured = true;
+            _isScannerErrorOccured = false;
 
             if (_curTask != null && _curTask.id != newTask.id) throw new AlreadyUsingException(newTask.id, _curTask.id);
             _curTask = newTask;
@@ -242,16 +242,30 @@ namespace scan_controller.Service
 
             var caps = _curDataSource.Capabilities;
 
-            // Legacy UI 삭제
+            // Legacy UI 삭제 true가 아니면 모두 false로 처리됨 ex) asdfasdf -> false
             caps.CapIndicators.SetValue(EnumUtil<BoolType>.Parse(_curTask.scanMode.showLegacyUI.ToString()));
 
             // 색상 방식
-            caps.ICapPixelType.SetValue(EnumUtil<PixelType>.Parse(_curTask.scanMode.colorMode));
+            try
+            {
+                caps.ICapPixelType.SetValue(EnumUtil<PixelType>.Parse(_curTask.scanMode.colorMode));
+            }
+            catch (Exception e)
+            {
+                throw new ScanModeValueException("colorMode", _curTask.scanMode.colorMode);
+            }
 
             // DPI 설정 (NOT Enum)
-            var dpi = int.Parse(_curTask.scanMode.dpiMode);
-            caps.ICapXResolution.SetValue(dpi);
-            caps.ICapYResolution.SetValue(dpi);
+            try
+            {
+                var dpi = int.Parse(_curTask.scanMode.dpiMode);
+                caps.ICapXResolution.SetValue(dpi);
+                caps.ICapYResolution.SetValue(dpi);
+            }
+            catch (Exception e)
+            {
+                throw new ScanModeValueException("dpiMode", _curTask.scanMode.dpiMode);
+            }
 
             // 급지 방식
             if (_curTask.scanMode.feederMode == "flated")
@@ -259,7 +273,7 @@ namespace scan_controller.Service
                 // 스캔
                 caps.CapFeederEnabled.SetValue(BoolType.False);
             }
-            else
+            else if (_curTask.scanMode.feederMode.Contains("ADF"))
             {
                 // ADF
                 caps.CapFeederEnabled.SetValue(BoolType.True);

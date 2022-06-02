@@ -123,12 +123,17 @@ namespace scan_controller.Controllers
                     scanTask.id = HashUtil.GetGuid();
                 var isScannerErrorOccured = ScanService.StartScan(scanTask);
                 if (isScannerErrorOccured)
-                    return new Response(-1, scanTask.id, "Failed task \n Scanner error is occured");
+                    return new Response(2, scanTask.id, "Failed task \n Datasource Error is occured");
                 return new Response(0, scanTask.id, "Success task");
+            }
+            catch (ScanModeValueException e)
+            {
+                return new Response(3, null,
+                    "Failed task \n" + e.ModeName + " is not apply " + e.Value);
             }
             catch (AlreadyUsingException e)
             {
-                return new Response(1, e,
+                return new Response(1, null,
                     "Failed task \n [input task id]" + e.InputTaskId + "!=[current task id]" + e.CurTaskId);
             }
             catch (Exception e)
