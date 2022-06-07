@@ -136,6 +136,10 @@ namespace scan_controller.Controllers
                 return new Response(1, null,
                     "Failed task \n [input task id]" + e.InputTaskId + "!=[current task id]" + e.CurTaskId);
             }
+            catch (ConcurrentFileAccessException e)
+            {
+                return new Response(4, null, "Failed task \n Concurrently access save path" + e.DirName);
+            }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
@@ -160,9 +164,13 @@ namespace scan_controller.Controllers
             }
             catch (NotMatchedTaskIdException e)
             {
-                return new Response(1, null,
+                return new Response(2, null,
                     "Failed Delete Scan Task \n  [input task id]" + e.InputTaskId + "!=[current task id]" +
                     e.CurTaskId);
+            }
+            catch (ConcurrentFileAccessException e)
+            {
+                return new Response(3, null, "Failed task \n Concurrently Access Save Path" + e.DirName);
             }
             catch (Exception e)
             {

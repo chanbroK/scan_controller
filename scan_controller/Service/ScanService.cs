@@ -58,6 +58,7 @@ namespace scan_controller.Service
                 // 스캔 결과 전송 에러 발생
                 Console.WriteLine("TransferError!!");
                 _isScannerErrorOccured = true;
+                _isScanEnd = true;
                 Console.WriteLine(e.Exception.Message);
             };
             _session.SourceDisabled += (s, e) =>
@@ -73,6 +74,8 @@ namespace scan_controller.Service
             _session.DeviceEvent += (s, e) =>
             {
                 Console.WriteLine("DeviceEvent!!");
+                _isScannerErrorOccured = true;
+                _isScanEnd = true;
                 // DS의 자체 이벤트 발생
             };
             _session.PropertyChanged += (s, e) =>
@@ -81,6 +84,7 @@ namespace scan_controller.Service
             };
             _session.StateChanged += (s, e) =>
             {
+                Console.WriteLine(_session.State);
                 // state가 변경될 때 _session.state로 접근
             };
 
@@ -168,7 +172,11 @@ namespace scan_controller.Service
             // o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
 
             _isScanEnd = false;
+            Console.WriteLine(_curDataSource.Capabilities.CapFeederEnabled.GetCurrent());
+            Console.WriteLine(_curDataSource.Capabilities.CapFeederLoaded.GetCurrent());
             _curDataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero);
+
+
             while (!_isScanEnd)
             {
                 // 스캔 대기
@@ -425,6 +433,10 @@ namespace scan_controller.Service
                         Image.Load(_streamList[i]).Save(fileName);
                     }
                 }
+            }
+            catch (SystemException e)
+            {
+                throw new ConcurrentFileAccessException(_curTask.fileExt);
             }
             finally
             {
