@@ -285,91 +285,112 @@ namespace scan_controller.Service
                 // 스캔
                 caps.CapFeederEnabled.SetValue(BoolType.False);
             }
-            else if (_curTask.scanMode.feederMode.Contains("ADF"))
+            else if (_curTask.scanMode.feederMode == "ADF(one-side)")
             {
                 // ADF
                 caps.CapFeederEnabled.SetValue(BoolType.True);
-                if (_curTask.scanMode.feederMode.Contains("one-side"))
-                    // 단면 ADF
-                    caps.CapDuplexEnabled.SetValue(BoolType.False);
-
-                if (_curTask.scanMode.feederMode.Contains("two-side"))
+                // 단면
+                caps.CapDuplexEnabled.SetValue(BoolType.False);
+            }
+            else if (_curTask.scanMode.feederMode == "ADF(two-side")
+            {
+                // ADF
+                caps.CapFeederEnabled.SetValue(BoolType.True);
+                // 양면
+                caps.CapDuplexEnabled.SetValue(BoolType.True);
+                //용지 뒤집는 방식
+                try
                 {
-                    // 양면 ADF
-                    caps.CapDuplexEnabled.SetValue(BoolType.True);
-                    //용지 뒤집는 방식
                     if (caps.ICapFlipRotation.IsSupported)
                         caps.ICapFlipRotation.SetValue(EnumUtil<FlipRotation>.Parse(_curTask.scanMode.flipMode));
                 }
+                catch (Exception e)
+                {
+                    throw new ScanModeValueException("flipMode", _curTask.scanMode.flipMode);
+                }
             }
+            else
+            {
+                throw new ScanModeValueException("feederMode", _curTask.scanMode.feederMode);
+            }
+
 
             // 용지 크기
 
-            var size = EnumUtil<SupportedSize>.Parse(_curTask.scanMode.paperSizeMode);
-            var direction = _curTask.scanMode.paperDirection;
-            float width = 0, height = 0;
-            switch (size)
+            try
             {
-                case SupportedSize.USLetter:
-                    width = 8.5f;
-                    height = 11;
-                    break;
-                case SupportedSize.USLegal:
-                    width = 8.5f;
-                    height = 14;
-                    break;
-                case SupportedSize.A3:
-                    width = 420 / 25.4f;
-                    height = 297 / 25.4f;
-                    break;
-                case SupportedSize.A4:
-                    if (direction.Equals("vertical"))
-                    {
-                        width = 210 / 25.4f;
+                var size = EnumUtil<SupportedSize>.Parse(_curTask.scanMode.paperSizeMode);
+                var direction = _curTask.scanMode.paperDirection;
+                float width = 0, height = 0;
+                switch (size)
+                {
+                    case SupportedSize.USLetter:
+                        width = 8.5f;
+                        height = 11;
+                        break;
+                    case SupportedSize.USLegal:
+                        width = 8.5f;
+                        height = 14;
+                        break;
+                    case SupportedSize.A3:
+                        width = 420 / 25.4f;
                         height = 297 / 25.4f;
-                    }
-                    else
-                    {
-                        width = 297 / 25.4f;
+                        break;
+                    case SupportedSize.A4:
+                        if (direction.Equals("vertical"))
+                        {
+                            width = 210 / 25.4f;
+                            height = 297 / 25.4f;
+                        }
+                        else
+                        {
+                            width = 297 / 25.4f;
+                            height = 210 / 25.4f;
+                        }
+
+                        break;
+                    case SupportedSize.A5:
+                        width = 148 / 25.4f;
                         height = 210 / 25.4f;
-                    }
-
-                    break;
-                case SupportedSize.A5:
-                    width = 148 / 25.4f;
-                    height = 210 / 25.4f;
-                    break;
-                case SupportedSize.IsoB4:
-                    width = 250 / 25.4f;
-                    height = 353 / 25.4f;
-                    break;
-                case SupportedSize.IsoB5:
-                    if (direction.Equals("vertical"))
-                    {
-                        width = 176 / 25.4f;
-                        height = 250 / 25.4f;
-                    }
-                    else
-                    {
+                        break;
+                    case SupportedSize.IsoB4:
                         width = 250 / 25.4f;
-                        height = 176 / 25.4f;
-                    }
+                        height = 353 / 25.4f;
+                        break;
+                    case SupportedSize.IsoB5:
+                        if (direction.Equals("vertical"))
+                        {
+                            width = 176 / 25.4f;
+                            height = 250 / 25.4f;
+                        }
+                        else
+                        {
+                            width = 250 / 25.4f;
+                            height = 176 / 25.4f;
+                        }
 
-                    break;
+                        break;
+                }
+
+                // set DS unit to inch
+                _curDataSource.Capabilities.ICapUnits.SetValue(Unit.Inches);
+                _curDataSource.DGImage.ImageLayout.Get(out var imageLayout);
+                // create new TWFrame
+                imageLayout.Frame = new TWFrame
+                {
+                    Left = 0,
+                    Right = width,
+                    Top = 0,
+                    Bottom = height
+                };
+                _curDataSource.DGImage.ImageLayout.Set(imageLayout);
             }
-
-            // set DS unit to inch
-            _curDataSource.Capabilities.ICapUnits.SetValue(Unit.Inches);
-            _curDataSource.DGImage.ImageLayout.Get(out var imageLayout);
-            // create new TWFrame
-            imageLayout.Frame = new TWFrame
+            catch (Exception e)
             {
-                Left = 0,
-                Right = width,
-                Top = 0,
-                Bottom = height
-            };
-            _curDataSource.DGImage.ImageLayout.Set(imageLayout);
+                if (_curTask.scanMode.paperDirection == "vertical" || _curTask.scanMode.paperDirection == "horizontal")
+                    throw new ScanModeValueException("paperDirection", _curTask.scanMode.paperDirection);
+                throw new ScanModeValueException("paperSizeMode", _curTask.scanMode.paperSizeMode);
+            }
         }
 
         private void SaveToFile()
@@ -440,16 +461,18 @@ namespace scan_controller.Service
             }
             catch (NullReferenceException e)
             {
-                Console.WriteLine(e.GetBaseException());
-                Console.WriteLine(e.InnerException.GetType());
-                Console.WriteLine(e.StackTrace);
-                Console.WriteLine(e.Message);
+                throw new NoDataToSaveException();
             }
-            // catch (SystemException e)
-            // {
-            // throw new ConcurrentFileAccessException(_curTask.fileExt);
-            // }
+            catch (InvalidOperationException e)
+            {
+                throw new NoDataToSaveException();
+            }
+            catch (Exception e)
+            {
+                throw new ConcurrentFileAccessException(_curTask.fileExt);
+            }
             finally
+
             {
                 _streamList.Clear();
                 _curTask = null;
