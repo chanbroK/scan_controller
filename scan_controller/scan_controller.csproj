@@ -150,6 +150,7 @@
     <Compile Include="Models\DTO\ScanTask.cs" />
     <Compile Include="Models\Exception\AlreadyUsingException.cs" />
     <Compile Include="Models\Exception\ConcurrentFileAccessException.cs" />
+    <Compile Include="Models\Exception\NoPaperADFException.cs" />
     <Compile Include="Models\Exception\ScanModeValueException.cs" />
     <Compile Include="Models\Exception\NoTaskException.cs" />
     <Compile Include="Models\Exception\NotMatchedTaskIdException.cs" />

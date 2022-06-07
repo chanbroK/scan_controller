@@ -171,9 +171,13 @@ namespace scan_controller.Service
             // ThreadPool.QueueUserWorkItem(
             // o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
 
+            // ADF check
+            if (_curTask.scanMode.feederMode != "flated")
+                if (_curDataSource.Capabilities.CapFeederLoaded.GetCurrent() == BoolType.False)
+                    throw new NoPaperADFException();
+
+
             _isScanEnd = false;
-            Console.WriteLine(_curDataSource.Capabilities.CapFeederEnabled.GetCurrent());
-            Console.WriteLine(_curDataSource.Capabilities.CapFeederLoaded.GetCurrent());
             _curDataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero);
 
 
