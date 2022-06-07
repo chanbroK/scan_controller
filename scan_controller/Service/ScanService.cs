@@ -438,10 +438,17 @@ namespace scan_controller.Service
                     }
                 }
             }
-            catch (SystemException e)
+            catch (NullReferenceException e)
             {
-                throw new ConcurrentFileAccessException(_curTask.fileExt);
+                Console.WriteLine(e.GetBaseException());
+                Console.WriteLine(e.InnerException.GetType());
+                Console.WriteLine(e.StackTrace);
+                Console.WriteLine(e.Message);
             }
+            // catch (SystemException e)
+            // {
+            // throw new ConcurrentFileAccessException(_curTask.fileExt);
+            // }
             finally
             {
                 _streamList.Clear();

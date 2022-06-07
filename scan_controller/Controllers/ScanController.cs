@@ -140,6 +140,14 @@ namespace scan_controller.Controllers
             {
                 return new Response(4, null, "Failed task \n Concurrently access save path" + e.DirName);
             }
+            catch (NoPaperADFException e)
+            {
+                return new Response(5, null, "Failed task \n No paper in ADF");
+            }
+            catch (NoDataToSaveException e)
+            {
+                return new Response(6, null, "Failed task \n No data to save");
+            }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
@@ -171,6 +179,10 @@ namespace scan_controller.Controllers
             catch (ConcurrentFileAccessException e)
             {
                 return new Response(3, null, "Failed task \n Concurrently Access Save Path" + e.DirName);
+            }
+            catch (NoDataToSaveException e)
+            {
+                return new Response(4, null, "Failed task \n No data to save");
             }
             catch (Exception e)
             {
