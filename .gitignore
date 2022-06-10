@@ -409,7 +409,7 @@ FodyWeavers.xsd
 
 ### DotnetCore ###
 # .NET Core build folders
-bin/
+# bin/
 obj/
 
 # Common node modules locations
