@@ -1,20 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Web.Http;
-using scan_controller.Models.DTO;
+using Microsoft.AspNetCore.Mvc;
+using NTwain;
+using scan_controller.Models;
 using scan_controller.Models.Exception;
 using scan_controller.Service;
 using scan_controller.Util;
 
+
 namespace scan_controller.Controllers
 {
-    // end point 는 대소문자 구분 X
-    [RoutePrefix("api/scan")]
-    public class ScanController : ApiController
+    [ApiController]
+    [Route("api/scan")]
+    public class ScanController : ControllerBase
     {
         private static readonly ScanService ScanService = new ScanService();
-
-
+        
         [Route("session")]
         [HttpDelete]
         public Response DeleteSession()
@@ -22,13 +21,12 @@ namespace scan_controller.Controllers
             try
             {
                 ScanService.DeleteSession();
-                return new Response(0, null, "Success Delete Session");
+                return new Response(0, 1, "Success Delete Session");
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return new Response(-1, e, "Failed Delete Session");
+                ExceptionResponse exceptionResponse = new ExceptionResponse(e.Message,e.StackTrace);
+                return new Response(-1, exceptionResponse, "Failed Delete Session");
             }
         }
 
@@ -46,9 +44,8 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return new Response(-1, e, "Failed Get DataSource");
+                ExceptionResponse exceptionResponse = new ExceptionResponse(e.Message,e.StackTrace);
+                return new Response(-1, exceptionResponse, "Failed Get DataSource");
             }
         }
 
@@ -67,19 +64,21 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return new Response(-1, e, "Failed Refresh DataSource");
+                ExceptionResponse exceptionResponse = new ExceptionResponse(e.Message,e.StackTrace);
+                return new Response(-1, exceptionResponse, "Failed Refresh DataSource");
             }
         }
 
-        [Route("datasource/spec")]
+        [Route("datasource/spec/{id}")]
         [HttpGet]
         public Response GetDataSourceSpec(int id)
         {
             try
             {
-                return new Response(0, ScanService.GetScannerCapability(id), "Success Get Datasource Spec");
+                Console.WriteLine(id);
+                ScannerSpec scannerSpec = ScanService.GetScannerCapability(id);
+                Console.Write(scannerSpec.colorMode.Count);
+                return new Response(0, scannerSpec, "Success Get Datasource Spec");
             }
             catch (ArgumentOutOfRangeException e)
             {
@@ -87,13 +86,12 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return new Response(-1, e, "Failed Get Datasource Spec");
+                ExceptionResponse exceptionResponse = new ExceptionResponse(e.Message,e.StackTrace);
+                return new Response(-1, exceptionResponse, "Failed Get Datasource Spec");
             }
         }
 
-        [Route("datasource")]
+        [Route("datasource/{id}")]
         [HttpPatch]
         public Response SetDatasource(int id)
         {
@@ -107,21 +105,22 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return new Response(-1, e, "Failed Set Datasource");
+                ExceptionResponse exceptionResponse = new ExceptionResponse(e.Message,e.StackTrace);
+                return new Response(-1, exceptionResponse, "Failed Set Datasource");
             }
         }
 
         [Route("task")]
         [HttpPost]
-        public Response Task(ScanTask scanTask)
+        public Response Task([FromBody]ScanTask scanTask)
         {
             try
             {
                 if (scanTask.id == null)
                     scanTask.id = HashUtil.GetGuid();
+                Console.WriteLine(scanTask.savePath);
                 var isScannerErrorOccured = ScanService.StartScan(scanTask);
+                
                 if (isScannerErrorOccured)
                     return new Response(2, scanTask.id, "Failed task \n Datasource Error is occured");
                 return new Response(0, scanTask.id, "Success task");
@@ -150,13 +149,12 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return new Response(-1, e, "Failed task");
+                ExceptionResponse exceptionResponse = new ExceptionResponse(e.Message,e.StackTrace);
+                return new Response(-1, exceptionResponse, "Failed task");
             }
         }
 
-        [Route("task")]
+        [Route("task/{taskId}")]
         [HttpDelete]
         public Response DeleteTask(string taskId)
         {
@@ -186,9 +184,8 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return new Response(-1, e, "Failed Delete Scan Task");
+                ExceptionResponse exceptionResponse = new ExceptionResponse(e.Message,e.StackTrace);
+                return new Response(-1, exceptionResponse, "Failed Delete Scan Task");
             }
         }
 
@@ -203,9 +200,8 @@ namespace scan_controller.Controllers
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                return new Response(-1, e, "failed Get State");
+                ExceptionResponse exceptionResponse = new ExceptionResponse(e.Message,e.StackTrace);
+                return new Response(-1, exceptionResponse, "Failed Delete Scan Task");
             }
         }
     }

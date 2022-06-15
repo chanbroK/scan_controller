@@ -8,7 +8,7 @@ using NTwain.Data;
 using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
-using scan_controller.Models.DTO;
+using scan_controller.Models;
 using scan_controller.Models.Exception;
 using scan_controller.Util;
 using SixLabors.ImageSharp;
@@ -17,17 +17,20 @@ namespace scan_controller.Service
 {
     public class ScanService
     {
-        private static TwainSession _session;
-        private static DataSource _curDataSource;
+        private static TwainSession? _session;
+        private static DataSource? _curDataSource;
         private readonly List<DataSource> _dataSourceList = new List<DataSource>();
         private readonly List<Stream> _streamList = new List<Stream>();
-        private ScanTask _curTask;
+        private ScanTask? _curTask;
         private bool _isScanEnd;
         private bool _isScannerErrorOccured;
         private int _state;
 
         public ScanService()
         {
+            // Core에서 Encoding 방식이 Framework랑 다름 -> Assembly dll 추가해서 인코딩 방식 추가
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+
             Console.WriteLine(PlatformInfo.Current.IsApp64Bit
                 ? "Server Running on 64bit"
                 : "Server Running on 32Bit");
@@ -112,11 +115,14 @@ namespace scan_controller.Service
         public void LoadDataSource()
         {
             _dataSourceList.Clear();
+            Console.WriteLine(_session.GetSources().ToList().Count);
+         
             foreach (var ds in _session.GetSources().ToList())
                 try
                 {
                     ds.Open();
                     if (_session.State == 4) _dataSourceList.Add(ds);
+                    Console.WriteLine(ds.Name);
                     ds.Close();
                 }
                 catch (Exception e)
@@ -200,13 +206,16 @@ namespace scan_controller.Service
 
             var spec = new ScannerSpec();
 
-            var caps = _dataSourceList[id].Capabilities;
+            var targetDataSource = _dataSourceList[id];
+            var caps = targetDataSource.Capabilities;
 
             // 스캐너 이름
 
             spec.name = _dataSourceList[id].Name;
+            
             // 색상 방식
             foreach (var v in caps.ICapPixelType.GetValues()) spec.colorMode.Add(v.ToString());
+            
 
             // DPI 설정
             foreach (var v in caps.ICapXResolution.GetValues())
@@ -292,7 +301,7 @@ namespace scan_controller.Service
                 // 단면
                 caps.CapDuplexEnabled.SetValue(BoolType.False);
             }
-            else if (_curTask.scanMode.feederMode == "ADF(two-side")
+            else if (_curTask.scanMode.feederMode == "ADF(two-side)")
             {
                 // ADF
                 caps.CapFeederEnabled.SetValue(BoolType.True);
@@ -406,6 +415,7 @@ namespace scan_controller.Service
                 if (_curTask.fileExt == ".pdf")
                 {
                     var doc = new PdfDocument();
+                   
                     // pdfSize setting 
                     var pdfSize = PageSize.A4;
                     switch (_curTask.scanMode.paperSizeMode)
@@ -469,6 +479,7 @@ namespace scan_controller.Service
             }
             catch (Exception e)
             {
+                Console.WriteLine(e.ToString());
                 throw new ConcurrentFileAccessException(_curTask.fileExt);
             }
             finally
