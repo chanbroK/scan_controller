@@ -14,4 +14,13 @@ var app = builder.Build();
 
 app.MapControllers();
 
-app.Run();
+
+try
+{
+    app.Run();
+}catch(Exception ex)
+{
+    Console.WriteLine(ex.ToString());
+    Console.ReadLine();
+}
+

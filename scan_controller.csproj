@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
 	<UseWPF>true</UseWPF>
 	<Platforms>AnyCPU;ARM32;ARM64;x64;x86</Platforms>
+	  <RuntimeIdentifiers>win10-x86</RuntimeIdentifiers>
+	  <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
