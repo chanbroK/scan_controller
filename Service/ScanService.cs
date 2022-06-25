@@ -13,41 +13,56 @@ using scan_controller.Models.Exception;
 using scan_controller.Util;
 using SixLabors.ImageSharp;
 
+
+int SESSION_OPENED = 0;
+int DS_OPENED = 1;
+int DS_SCANING = 2;
+int WAIT_CONTINUE_SCAN = 3;
+int SAVING_FILE = 4;
 namespace scan_controller.Service
 {
     public class ScanService
     {
+        // twain driver와 연결 세션
         private static TwainSession? _session;
+        // 현재 연결된 DS
         private static DataSource? _curDataSource;
+        // 연결 가능한 DS 목록
         private readonly List<DataSource> _dataSourceList = new List<DataSource>();
+        // DS를 통해 받은 데이터 스트림 리스트
         private readonly List<Stream> _streamList = new List<Stream>();
+        // 현재 작업중인 Task
         private ScanTask? _curTask;
+        // DS의 스캔 작업이 완료 되었는지 여부
         private bool _isScanEnd;
+        // DS의 스캔 작업 중 에러가 발생하였는지 여부
         private bool _isScannerErrorOccured;
+        // 현재 서버의 상태 값
         private int _state;
 
         public ScanService()
         {
-            // Core에서 Encoding 방식이 Framework랑 다름 -> Assembly dll 추가해서 인코딩 방식 추가
+            // Core에서 Encoding 방식이 Framework랑 다름 -> PDF 저장을 위해 Assembly dll 추가해서 인코딩 방식 추가
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
             Console.WriteLine(PlatformInfo.Current.IsApp64Bit
                 ? "Server Running on 64bit"
                 : "Server Running on 32Bit");
 
-            // Set NTwain read twain_32.dll
+            // NTwain이 twain_32.dll 을 Load하도록 지정
             // PlatformInfo.Current.PreferNewDSM = false;
 
-            // Set NTwain read twaindsm.dll
+            // NTwain이 twaindsm.dll 을 Load하도록 지정
             PlatformInfo.Current.PreferNewDSM = true;
 
             Console.WriteLine("Loaded DSM =" + PlatformInfo.Current.ExpectedDsmPath);
-            // Create Twain Session
+
+            // twain driver와 session 생성
             _session = new TwainSession(TWIdentity.CreateFromAssembly(DataGroups.Image,
                 Assembly.GetExecutingAssembly()));
 
             // Session 상태 별 handler 설정
-            // DSM이 load되어 Session이 생성될때 handler가 등록됨(추후 close 되어도 유지된다.)
+            // 추후 세션이 close 되어도 유지된다. -> 다시 open 해서 사용하면 됨.
             _session.TransferReady += (s, e) => { Console.WriteLine("스캔 시작"); };
             _session.DataTransferred += (s, e) =>
             {
@@ -59,7 +74,7 @@ namespace scan_controller.Service
             _session.TransferError += (s, e) =>
             {
                 // 스캔 결과 전송 에러 발생
-                Console.WriteLine("TransferError!!");
+                Console.WriteLine("스캔 결과 전송 오류 발생");
                 _isScannerErrorOccured = true;
                 _isScanEnd = true;
                 Console.WriteLine(e.Exception.Message);
@@ -76,19 +91,19 @@ namespace scan_controller.Service
             };
             _session.DeviceEvent += (s, e) =>
             {
-                Console.WriteLine("DeviceEvent!!");
+                Console.WriteLine("기기에 이벤트 발생");
                 _isScannerErrorOccured = true;
                 _isScanEnd = true;
                 // DS의 자체 이벤트 발생
             };
             _session.PropertyChanged += (s, e) =>
             {
-                // ? ? ? DS의 소유권 이전 ? 
+                // DS의 소유권 이전
             };
             _session.StateChanged += (s, e) =>
             {
-                Console.WriteLine(_session.State);
-                // state가 변경될 때 _session.state로 접근
+                // state가 변경될 때 
+                // _session.state로 접근 가능
             };
 
             OpenSession();
@@ -97,14 +112,15 @@ namespace scan_controller.Service
             SetDataSource(0);
         }
 
+        // 생성된 twain driver와의 연결 Open
         private void OpenSession()
         {
-            // Twain Session Open 
             _session.Open();
-            _state = 0;
+            _state = SESSION_OPENED;
             Console.WriteLine("Session[Open]");
         }
 
+        // 생성된 twain driver와의 연결 Close 및 연결된 DS와의 연결도 Close
         public void DeleteSession()
         {
             if (_curDataSource.IsOpen) _curDataSource.Close();
@@ -112,17 +128,19 @@ namespace scan_controller.Service
             Console.WriteLine("Session[Released]");
         }
 
+        // 연결 가능한 DS 목록 갱신
         public void LoadDataSource()
         {
             _dataSourceList.Clear();
-            Console.WriteLine(_session.GetSources().ToList().Count);
-         
+
+            if (!_session.IsDsmOpen) OpenSession();
+
             foreach (var ds in _session.GetSources().ToList())
                 try
                 {
+                    // DS와의 연결을 시도해봄으로써 정상 작동하는 DS인지 확인
                     ds.Open();
                     if (_session.State == 4) _dataSourceList.Add(ds);
-                    Console.WriteLine(ds.Name);
                     ds.Close();
                 }
                 catch (Exception e)
@@ -130,78 +148,98 @@ namespace scan_controller.Service
                     Console.WriteLine("Not Supported " + ds.Name);
                 }
         }
-
+        // 연결 가능한 DS 목록 반환
         public List<DataSource> GetDataSourceList()
         {
             return _dataSourceList;
         }
-
+        // 사용할 DS 설정
+        // id : DS 목록의 인덱스 번호
+        // return : 설정한 DS 이름 반환
         public string SetDataSource(int id)
         {
+            // 이전에 연결되어 있던 DS 닫기
             if (_curDataSource != null && _curDataSource.IsOpen) _curDataSource.Close();
+            // 
             _curDataSource = _dataSourceList[id];
             _curDataSource.Open();
-            _state = 1;
+            _state = DS_OPENED;
             return _curDataSource.Name;
         }
 
-
+        // Scan Task 시작
+        // newTask -> ScanTask이 담긴 객체 
+        // return -> 스캔 과정에서 오류가 발생했는지 여부 반환
         public bool StartScan(ScanTask newTask)
         {
             _isScannerErrorOccured = false;
-
+            // 이미 작업 중인 Task가 존재하는데 입력된 스캔 명령의 id가 일치하지 않으면 에러 반환(연속 스캔 작업일 경우 일치하는 id를 ScanTask객체에 넣어야 한다.)
             if (_curTask != null && _curTask.id != newTask.id) throw new AlreadyUsingException(newTask.id, _curTask.id);
+
             _curTask = newTask;
+
             Scan();
 
             return _isScannerErrorOccured;
         }
-
+        // Scan Task 종료
+        // taskId -> 종료할 ScanTask의 id
         public void EndScan(string taskId)
         {
+            // 현재 작업 중인 Task 가 없으면 에러 반환
             if (_curTask == null)
                 throw new NoTaskException();
+            // 현재 작업 중인 Task와 id가 일치하지 않으면 에러 반환
             if (_curTask.id != taskId)
                 throw new NotMatchedTaskIdException(taskId, _curTask.id);
-            SaveToFile();
+            // 현재 데이터 스트림 저장 (연속 스캔 작업일 경우)
+            if (_curTask.isContinue)
+                SaveToFile();
         }
 
         private void Scan()
         {
-            _state = 2;
+            _state = DS_SCANING;
+
             if (!_session.IsDsmOpen) OpenSession();
             if (!_curDataSource.IsOpen) _curDataSource.Open();
 
-            SetCapability();
-
-            // ThreadPool.QueueUserWorkItem(
-            // o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
-
-            // ADF check
+            // ADF에 용지가 있는지 확인
             if (_curTask.scanMode.feederMode != "flated")
                 if (_curDataSource.Capabilities.CapFeederLoaded.GetCurrent() == BoolType.False)
                     throw new NoPaperADFException();
 
+            // ScanMode 설정
+            SetCapability();
+
 
             _isScanEnd = false;
+
+            // ThreadPool 이용하여 스캔 명령
+            // ThreadPool.QueueUserWorkItem(
+            // o => { _dataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero); });
+
+            // 스캔 명령
             _curDataSource.Enable(SourceEnableMode.NoUI, false, IntPtr.Zero);
 
 
             while (!_isScanEnd)
             {
-                // 스캔 대기
+                // 스캔 완료 대기
             }
 
             if (!_curTask.isContinue)
                 SaveToFile();
             else
-                _state = 3;
+                _state = WAIT_CONTINUE_SCAN;
         }
-
+        // 지정한 DS의 Spec 반환
+        // id : 연결 가능한 DS 목록의 인덱스
+        // return : 지정한 스캐너의 ScannerSpec
         public ScannerSpec GetScannerCapability(int id)
         {
-            // if (!_session.IsDsmOpen) OpenSession();
-            // if (!_curDataSource.IsOpen) _curDataSource.Open();
+            if (!_session.IsDsmOpen) OpenSession();
+            if (!_curDataSource.IsOpen) _curDataSource.Open();
 
 
             var spec = new ScannerSpec();
@@ -212,14 +250,13 @@ namespace scan_controller.Service
             // 스캐너 이름
 
             spec.name = _dataSourceList[id].Name;
-            
+
             // 색상 방식
             foreach (var v in caps.ICapPixelType.GetValues()) spec.colorMode.Add(v.ToString());
-            
+
 
             // DPI 설정
             foreach (var v in caps.ICapXResolution.GetValues())
-                // X,Y 값이 다를 수 있음 주의
                 spec.dpiMode.Add(v.ToString());
 
             // 급지 방식
@@ -250,17 +287,16 @@ namespace scan_controller.Service
 
             return spec;
         }
-
+        // 서버의 상태 반환
+        // return : 서버의 상태
         public int GetState()
         {
             return _state;
         }
-
+        
+        // curTask의 ScanMode를 DS의 작업 Spec으로 설정
         private void SetCapability()
         {
-            // if (!_session.IsDsmOpen) OpenSession();
-            // if (!_curDataSource.IsOpen) _curDataSource.Open();
-
             var caps = _curDataSource.Capabilities;
 
             // Legacy UI 삭제 true가 아니면 모두 false로 처리됨 ex) asdfasdf -> false
@@ -330,6 +366,8 @@ namespace scan_controller.Service
             {
                 var size = EnumUtil<SupportedSize>.Parse(_curTask.scanMode.paperSizeMode);
                 var direction = _curTask.scanMode.paperDirection;
+
+
                 float width = 0, height = 0;
                 switch (size)
                 {
@@ -381,10 +419,11 @@ namespace scan_controller.Service
                         break;
                 }
 
-                // set DS unit to inch
+                // DS의 단위를 인치로 설정
                 _curDataSource.Capabilities.ICapUnits.SetValue(Unit.Inches);
                 _curDataSource.DGImage.ImageLayout.Get(out var imageLayout);
-                // create new TWFrame
+
+                // TWFrame 생성 및 설정
                 imageLayout.Frame = new TWFrame
                 {
                     Left = 0,
@@ -396,18 +435,18 @@ namespace scan_controller.Service
             }
             catch (Exception e)
             {
-                if (_curTask.scanMode.paperDirection == "vertical" || _curTask.scanMode.paperDirection == "horizontal")
+                if (!_curTask.scanMode.paperDirection == "vertical" || !_curTask.scanMode.paperDirection == "horizontal")
                     throw new ScanModeValueException("paperDirection", _curTask.scanMode.paperDirection);
                 throw new ScanModeValueException("paperSizeMode", _curTask.scanMode.paperSizeMode);
             }
         }
-
+        // 스캔 결과 파일 저장 
         private void SaveToFile()
         {
             Console.WriteLine("스캔 결과 저장 시작");
             try
             {
-                _state = 4;
+                _state = SAVING_FILE;
                 // Dir 생성
                 var dir = new DirectoryInfo(_curTask.savePath + _curTask.id);
                 if (dir.Exists == false) dir.Create();
@@ -415,7 +454,7 @@ namespace scan_controller.Service
                 if (_curTask.fileExt == ".pdf")
                 {
                     var doc = new PdfDocument();
-                   
+
                     // pdfSize setting 
                     var pdfSize = PageSize.A4;
                     switch (_curTask.scanMode.paperSizeMode)
@@ -477,13 +516,7 @@ namespace scan_controller.Service
             {
                 throw new NoDataToSaveException();
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-                throw new ConcurrentFileAccessException(_curTask.fileExt);
-            }
             finally
-
             {
                 _streamList.Clear();
                 _curTask = null;

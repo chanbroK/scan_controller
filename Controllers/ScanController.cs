@@ -16,6 +16,7 @@ namespace scan_controller.Controllers
         
         [Route("session")]
         [HttpDelete]
+        // twain driver와 Session 삭제(스캐너와 연결도 끊는다.)
         public Response DeleteSession()
         {
             try
@@ -32,6 +33,7 @@ namespace scan_controller.Controllers
 
         [Route("datasource")]
         [HttpGet]
+        // 연결 가능한 스캐너 목록 반환
         public Response GetDataSource()
         {
             try
@@ -51,6 +53,7 @@ namespace scan_controller.Controllers
 
         [Route("datasource/refresh")]
         [HttpGet]
+        // 사용 가능한 스캐너 목록 갱신하고 반환
         public Response GetRefreshDataSource()
         {
             try
@@ -71,6 +74,7 @@ namespace scan_controller.Controllers
 
         [Route("datasource/spec/{id}")]
         [HttpGet]
+        // 연결 가능한 데이터 소스의 Spec 반환
         public Response GetDataSourceSpec(int id)
         {
             try
@@ -93,6 +97,7 @@ namespace scan_controller.Controllers
 
         [Route("datasource/{id}")]
         [HttpPatch]
+        // 사용할 데이터 소스 설정
         public Response SetDatasource(int id)
         {
             try
@@ -112,13 +117,15 @@ namespace scan_controller.Controllers
 
         [Route("task")]
         [HttpPost]
+        // 스캔 명령 Task 
         public Response Task([FromBody]ScanTask scanTask)
         {
             try
             {
+                // 연속 스캔 작업이 아닐 경우 id가 없으므로 새로운 GUID 생성
                 if (scanTask.id == null)
                     scanTask.id = HashUtil.GetGuid();
-                Console.WriteLine(scanTask.savePath);
+
                 var isScannerErrorOccured = ScanService.StartScan(scanTask);
                 
                 if (isScannerErrorOccured)
@@ -156,6 +163,7 @@ namespace scan_controller.Controllers
 
         [Route("task/{taskId}")]
         [HttpDelete]
+        // 작업 중인 Task 삭제, 작업 중이던 Task가 연속 스캔이라면 연속 스캔을 종료하고 저장 
         public Response DeleteTask(string taskId)
         {
             try
@@ -192,6 +200,7 @@ namespace scan_controller.Controllers
 
         [Route("state")]
         [HttpGet]
+        // 해당 서버의 상태 값 반환
         public Response GetState()
         {
             try
