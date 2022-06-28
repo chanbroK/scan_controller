@@ -1,3 +1,5 @@
+using scan_controller.Service;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
