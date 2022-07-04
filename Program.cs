@@ -1,4 +1,4 @@
-using scan_controller.Exception;
+using scan_controller.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 

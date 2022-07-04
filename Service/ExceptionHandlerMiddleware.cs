@@ -1,7 +1,8 @@
 ﻿using System.Net;
 using System.Text.Json;
+using scan_controller.Exception;
 
-namespace scan_controller.Exception;
+namespace scan_controller.Service;
 
 public class ExceptionHandlerMiddleware
 {
@@ -32,7 +33,9 @@ public class ExceptionHandlerMiddleware
                     break;
                 default:
                     response.StatusCode = (int) HttpStatusCode.InternalServerError;
-                    await response.WriteAsync(JsonSerializer.Serialize(new {message = "Not Handled Exception"}));
+                    Console.WriteLine(exception.Message);
+                    Console.WriteLine(exception.StackTrace);
+                    await response.WriteAsync(JsonSerializer.Serialize(new {errorMessage = "미처리 예외 발생"}));
                     break;
             }
         }

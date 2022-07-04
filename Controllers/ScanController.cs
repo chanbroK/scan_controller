@@ -12,6 +12,14 @@ public class ScanController : ControllerBase
 {
     private static readonly ScanService ScanService = new();
 
+    [Route("test")]
+    [HttpDelete]
+    // twain driver와 Session 삭제(스캐너와 연결도 끊는다.)
+    public void test()
+    {
+        throw new System.Exception();
+    }
+
     [Route("session")]
     [HttpDelete]
     // twain driver와 Session 삭제(스캐너와 연결도 끊는다.)
