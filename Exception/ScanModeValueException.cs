@@ -1,16 +1,13 @@
-﻿namespace scan_controller.Models.Exception
+﻿using System.Net;
+
+namespace scan_controller.Exception;
+
+// 요청한 스캔 모드의 값으로 잘못된 값이 입력되었을때
+public class ScanModeValueException : BusinessException
 {
-    // 요청한 스캔 모드의 값으로 잘못된 값이 입력되었을때
-    public class ScanModeValueException : System.Exception
+    public ScanModeValueException(string modeName, string value)
     {
-        public readonly string ModeName;
-        public readonly string Value;
-
-
-        public ScanModeValueException(string modeName, string value)
-        {
-            ModeName = modeName;
-            Value = value;
-        }
+        StatusCode = (int) HttpStatusCode.BadRequest;
+        Message = "ScanMode에 입력된 " + modeName + "이 " + value + "값을 지원하지 않습니다.";
     }
 }

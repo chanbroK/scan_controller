@@ -1,7 +1,13 @@
-﻿namespace scan_controller.Models.Exception
+﻿using System.Net;
+
+namespace scan_controller.Exception;
+
+// ADF 방식 스캔 명령인데 ADF에 용지가 없을 때
+public class NoPaperAdfException : BusinessException
 {
-    // ADF 방식 스캔 명령인데 ADF에 용지가 없을 때
-    public class NoPaperADFException : System.Exception
+    public NoPaperAdfException()
     {
+        StatusCode = (int) HttpStatusCode.BadRequest;
+        Message = "ADF에 용지가 없습니다.";
     }
 }

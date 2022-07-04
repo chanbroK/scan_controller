@@ -13,7 +13,6 @@ namespace scan_controller.Util
         */
         public static string GetGuid()
         {
-
             return Guid.NewGuid().ToString().Replace("-", "");
         }
     }

@@ -6,8 +6,8 @@ using NTwain.Data;
 using PdfSharp;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
+using scan_controller.Exception;
 using scan_controller.Models;
-using scan_controller.Models.Exception;
 using scan_controller.Util;
 using SixLabors.ImageSharp;
 
@@ -48,7 +48,7 @@ public class ScanService
 
     public ScanService()
     {
-        // Core에서 Encoding 방식이 Framework랑 다름 -> PDF 저장을 위해 Assembly dll 추가해서 인코딩 방식 추가
+        // .NET Core에서 Encoding 방식이 .NET Framework랑 다름 -> PDF 저장을 위해 Assembly dll 추가해서 인코딩 방식 추가
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
         Console.WriteLine(PlatformInfo.Current.IsApp64Bit
@@ -148,7 +148,7 @@ public class ScanService
                 if (_session.State == 4) _enableScannerList.Add(ds);
                 ds.Close();
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 Console.WriteLine("Not Supported " + ds.Name);
             }
@@ -168,10 +168,17 @@ public class ScanService
         // 이전에 연결되어 있던 DS 닫기
         if (_curScanner != null && _curScanner.IsOpen) _curScanner.Close();
         // 
-        _curScanner = _enableScannerList[id];
-        _curScanner.Open();
-        _state = SCANNER_OPENED;
-        return _curScanner.Name;
+        try
+        {
+            _curScanner = _enableScannerList[id];
+            _curScanner.Open();
+            _state = SCANNER_OPENED;
+            return _curScanner.Name;
+        }
+        catch (ArgumentOutOfRangeException e)
+        {
+            throw new ScannerIndexOutOfRangeException(_enableScannerList.Count, id);
+        }
     }
 
     // Scan Task 시작
@@ -181,7 +188,7 @@ public class ScanService
     {
         _isScannerErrorOccured = false;
         // 이미 작업 중인 Task가 존재하는데 입력된 스캔 명령의 id가 일치하지 않으면 에러 반환(연속 스캔 작업일 경우 일치하는 id를 ScanTask객체에 넣어야 한다.)
-        if (_curTask != null && _curTask.id != newTask.id) throw new AlreadyUsingException(newTask.id, _curTask.id);
+        if (_curTask != null && _curTask.id != newTask.id) throw new NotMatchedTaskIdException(newTask.id, _curTask.id);
 
         _curTask = newTask;
 
@@ -213,9 +220,9 @@ public class ScanService
         if (!_curScanner.IsOpen) _curScanner.Open();
 
         // ADF에 용지가 있는지 확인
-        if (_curTask.scanMode.feederMode != "flated")
+        if (_curTask.scanMode.feederMode != "flatbed")
             if (_curScanner.Capabilities.CapFeederLoaded.GetCurrent() == BoolType.False)
-                throw new NoPaperADFException();
+                throw new NoPaperAdfException();
 
         // ScanMode 설정
         SetScannerSpec();
@@ -252,8 +259,16 @@ public class ScanService
 
 
         var spec = new ScannerSpec();
+        DataSource targetDataSource;
+        try
+        {
+            targetDataSource = _enableScannerList[id];
+        }
+        catch (ArgumentOutOfRangeException e)
+        {
+            throw new ScannerIndexOutOfRangeException(_enableScannerList.Count, id);
+        }
 
-        var targetDataSource = _enableScannerList[id];
         var caps = targetDataSource.Capabilities;
 
         // 스캐너 이름
@@ -268,10 +283,16 @@ public class ScanService
         foreach (var v in caps.ICapXResolution.GetValues())
             spec.dpiMode.Add(v.ToString());
 
+
+        Console.WriteLine(caps.CapAutomaticSenseMedium.IsSupported);
+        Console.WriteLine(caps.CapAutomaticSenseMedium.GetCurrent());
         // 급지 방식
-        spec.feederMode.Add("flated");
+        // twain 2.1 이상 지원이면 flatbed & ADF 둘 다 지원할 경우 True 값을 가짐
+        // caps.CapAutomaticSenseMedium.IsSupported
+
         if (caps.CapFeederEnabled.IsSupported)
         {
+            spec.feederMode.Add("flatbed");
             spec.feederMode.Add("ADF(one-side)");
             if (caps.CapDuplexEnabled.IsSupported) spec.feederMode.Add("ADF(two-side)");
         }
@@ -317,7 +338,7 @@ public class ScanService
         {
             caps.ICapPixelType.SetValue(EnumUtil<PixelType>.Parse(_curTask.scanMode.colorMode));
         }
-        catch (Exception e)
+        catch (System.Exception e)
         {
             throw new ScanModeValueException("colorMode", _curTask.scanMode.colorMode);
         }
@@ -329,13 +350,13 @@ public class ScanService
             caps.ICapXResolution.SetValue(dpi);
             caps.ICapYResolution.SetValue(dpi);
         }
-        catch (Exception e)
+        catch (System.Exception e)
         {
             throw new ScanModeValueException("dpiMode", _curTask.scanMode.dpiMode);
         }
 
         // 급지 방식
-        if (_curTask.scanMode.feederMode == "flated")
+        if (_curTask.scanMode.feederMode == "flatbed")
         {
             // 스캔
             caps.CapFeederEnabled.SetValue(BoolType.False);
@@ -359,7 +380,7 @@ public class ScanService
                 if (caps.ICapFlipRotation.IsSupported)
                     caps.ICapFlipRotation.SetValue(EnumUtil<FlipRotation>.Parse(_curTask.scanMode.flipMode));
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
                 throw new ScanModeValueException("flipMode", _curTask.scanMode.flipMode);
             }
@@ -443,7 +464,7 @@ public class ScanService
             };
             _curScanner.DGImage.ImageLayout.Set(imageLayout);
         }
-        catch (Exception e)
+        catch (System.Exception e)
         {
             if (_curTask.scanMode.paperDirection != "vertical" && _curTask.scanMode.paperDirection != "horizontal")
                 throw new ScanModeValueException("paperDirection", _curTask.scanMode.paperDirection);
@@ -507,14 +528,15 @@ public class ScanService
                     xgr.DrawImage(img, 0, 0);
                 }
 
-                doc.Save(_curTask.savePath + _curTask.id + "/000000" + _curTask.fileExt);
+                doc.Save(_curTask.savePath + _curTask.id + "/" + "0".PadLeft(6, '0') + _curTask.fileExt);
                 doc.Close();
             }
             else
             {
                 for (var i = 0; i < _streamList.Count; i++)
                 {
-                    var fileName = _curTask.savePath + _curTask.id + "/" + i + _curTask.fileExt;
+                    var fileName = _curTask.savePath + _curTask.id + "/" + i.ToString().PadLeft(6, '0') +
+                                   _curTask.fileExt;
                     Image.Load(_streamList[i]).Save(fileName);
                 }
             }
@@ -532,7 +554,7 @@ public class ScanService
             _streamList.Clear();
             _curTask = null;
             Console.WriteLine("스캔 결과 저장 완료");
-            _state = 1;
+            _state = SCANNER_OPENED;
         }
     }
 }

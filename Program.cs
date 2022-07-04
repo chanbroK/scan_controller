@@ -1,4 +1,4 @@
-using scan_controller.Service;
+using scan_controller.Exception;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,5 +15,8 @@ var app = builder.Build();
 // app.UseAuthorization();
 
 app.MapControllers();
+
+// middleware 사용
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 app.Run();

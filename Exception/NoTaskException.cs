@@ -1,7 +1,13 @@
-﻿namespace scan_controller.Models.Exception
+﻿using System.Net;
+
+namespace scan_controller.Exception;
+
+// 서버에서 수행중인 Task가 없을 때
+public class NoTaskException : BusinessException
 {
-    // 서버에서 수행중인 Task가 없을 때
-    public class NoTaskException : System.Exception
+    public NoTaskException()
     {
+        StatusCode = (int) HttpStatusCode.NotFound;
+        Message = "서버에서 수행중인 Task가 없습니다.";
     }
 }

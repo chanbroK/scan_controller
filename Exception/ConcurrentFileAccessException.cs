@@ -1,13 +1,12 @@
-﻿namespace scan_controller.Models.Exception
+﻿using System.Net;
+
+namespace scan_controller.Exception;
+
+public class ConcurrentFileAccessException : BusinessException
 {
-    public class ConcurrentFileAccessException : System.Exception
+    public ConcurrentFileAccessException(string dirName)
     {
-        public readonly string DirName;
-
-
-        public ConcurrentFileAccessException(string dirName)
-        {
-            DirName = dirName;
-        }
+        StatusCode = (int) HttpStatusCode.Locked;
+        Message = dirName + "에 저장하는 파일을 접근할 수 없습니다.";
     }
 }
