@@ -9,5 +9,6 @@ public class ScanModeValueException : BusinessException
     {
         StatusCode = (int) HttpStatusCode.BadRequest;
         Message = "ScanMode에 입력된 " + modeName + "이 " + value + "값을 지원하지 않습니다.";
+        Name = GetType().Name;
     }
 }

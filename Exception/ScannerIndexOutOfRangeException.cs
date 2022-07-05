@@ -9,5 +9,6 @@ public class ScannerIndexOutOfRangeException : BusinessException
     {
         StatusCode = (int) HttpStatusCode.BadRequest;
         Message = "사용가능한 스캐너의 개수는 " + size + "개이므로 " + index + "는 잘못되었습니다.";
+        Name = GetType().Name;
     }
 }

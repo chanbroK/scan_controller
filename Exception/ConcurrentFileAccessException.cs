@@ -8,5 +8,6 @@ public class ConcurrentFileAccessException : BusinessException
     {
         StatusCode = (int) HttpStatusCode.Locked;
         Message = dirName + "에 저장하는 파일을 접근할 수 없습니다.";
+        Name = GetType().Name;
     }
 }

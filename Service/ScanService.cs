@@ -224,7 +224,11 @@ public class ScanService
         // ADF에 용지가 있는지 확인
         if (_curTask.scanMode.feederMode != "flatbed")
             if (_curScanner.Capabilities.CapFeederLoaded.GetCurrent() == BoolType.False)
+            {
+                _curTask = null;
                 throw new NoPaperAdfException();
+            }
+                
 
         // ScanMode 설정
         SetScannerSpec();

@@ -9,5 +9,6 @@ public class NotMatchedTaskIdException : BusinessException
     {
         StatusCode = (int) HttpStatusCode.Conflict;
         Message = "입력한 Task의 id[" + inputTaskId + "]가 현재 서버에서 작업 중인 Task의 id[" + curTaskId + "]와 일치하지 않습니다.";
+        Name = GetType().Name;
     }
 }

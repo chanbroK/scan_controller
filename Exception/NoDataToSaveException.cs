@@ -9,5 +9,6 @@ public class NoDataToSaveException : BusinessException
     {
         StatusCode = (int) HttpStatusCode.NotFound;
         Message = "파일로 저장할 데이터가 없습니다.";
+        Name = GetType().Name;
     }
 }

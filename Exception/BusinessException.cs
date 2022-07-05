@@ -4,5 +4,6 @@
 public class BusinessException : System.Exception
 {
     public new string? Message;
+    public string Name;
     public int StatusCode;
 }

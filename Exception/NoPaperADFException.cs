@@ -9,5 +9,6 @@ public class NoPaperAdfException : BusinessException
     {
         StatusCode = (int) HttpStatusCode.BadRequest;
         Message = "ADF에 용지가 없습니다.";
+        Name = GetType().Name;
     }
 }

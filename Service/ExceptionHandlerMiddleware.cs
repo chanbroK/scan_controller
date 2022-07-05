@@ -29,13 +29,14 @@ public class ExceptionHandlerMiddleware
             {
                 case BusinessException e:
                     response.StatusCode = e.StatusCode;
-                    await response.WriteAsync(JsonSerializer.Serialize(new {errorMessage = e.Message}));
+                    await response.WriteAsync(JsonSerializer.Serialize(new {errorMessage = e.Message, name = e.Name}));
                     break;
                 default:
                     response.StatusCode = (int) HttpStatusCode.InternalServerError;
                     Console.WriteLine(exception.Message);
                     Console.WriteLine(exception.StackTrace);
-                    await response.WriteAsync(JsonSerializer.Serialize(new {errorMessage = "미처리 예외 발생"}));
+                    await response.WriteAsync(JsonSerializer.Serialize(new
+                        {errorMessage = "미처리 예외 발생", name = "UnhandledException"}));
                     break;
             }
         }
