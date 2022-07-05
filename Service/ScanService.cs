@@ -210,6 +210,7 @@ public class ScanService
         // 현재 데이터 스트림 저장 (연속 스캔 작업일 경우)
         if (_curTask.isContinue)
             SaveToFile();
+        _curTask = null;
     }
 
     private void Scan()
