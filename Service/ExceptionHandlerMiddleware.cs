@@ -29,7 +29,7 @@ public class ExceptionHandlerMiddleware
             {
                 case BusinessException e:
                     response.StatusCode = e.StatusCode;
-                    await response.WriteAsync(JsonSerializer.Serialize(new {message = e.Message}));
+                    await response.WriteAsync(JsonSerializer.Serialize(new {errorMessage = e.Message}));
                     break;
                 default:
                     response.StatusCode = (int) HttpStatusCode.InternalServerError;

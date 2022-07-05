@@ -177,7 +177,7 @@ public class ScanService
         }
         catch (ArgumentOutOfRangeException e)
         {
-            throw new ScannerIndexOutOfRangeException(_enableScannerList.Count, id);
+            throw new ScannerIndexOutOfRangeException(id, _enableScannerList.Count);
         }
     }
 
@@ -266,7 +266,7 @@ public class ScanService
         }
         catch (ArgumentOutOfRangeException e)
         {
-            throw new ScannerIndexOutOfRangeException(_enableScannerList.Count, id);
+            throw new ScannerIndexOutOfRangeException(id, _enableScannerList.Count);
         }
 
         var caps = targetDataSource.Capabilities;
