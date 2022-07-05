@@ -7,7 +7,7 @@ public class ScannerErrorException : BusinessException
 {
     public ScannerErrorException()
     {
-        StatusCode = (int) HttpStatusCode.BadRequest;
+        StatusCode = (int) HttpStatusCode.InternalServerError;
         Message = "스캔 도중 기기에 이상이 발생하였습니다.";
     }
 }
